@@ -1,6 +1,7 @@
 package animation3d.server;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 
@@ -10,6 +11,14 @@ import animation3d.textanim.Animator;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.plugin.FolderOpener;
+import omero.gateway.Gateway;
+import omero.gateway.LoginCredentials;
+import omero.gateway.SecurityContext;
+import omero.gateway.facility.BrowseFacility;
+import omero.gateway.model.ExperimenterData;
+import omero.gateway.model.ImageData;
+import omero.gateway.model.PixelsData;
+import omero.log.SimpleLogger;
 
 public class Animation3DHelper {
 
@@ -44,6 +53,8 @@ public class Animation3DHelper {
 			return;
 		}
 
+		downloadAndPreprocess(j);
+
 		// not null, open new image and create new renderer & animator
 		j.setState(State.OPENING);
 		if(image != null) {
@@ -63,6 +74,33 @@ public class Animation3DHelper {
 		animator.addAnimationListener(animationListener);
 
 		j.setState(State.OPENED);
+	}
+
+	private void downloadAndPreprocess(Job j) {
+		File directory = new File("/tmp/3Dscript." + j.imageID);
+		if(directory.exists() && !directory.isDirectory())
+			throw new RuntimeException(directory.getAbsolutePath() + " exists but is not a directory");
+
+		// if the directory exists, assume the data is already downloaded
+		// and preprocessed
+		if(directory.exists())
+			return;
+
+		j.setState(State.DOWNLOADING);
+		if(!directory.mkdirs())
+			throw new RuntimeException("Cannot create directory " + directory.getAbsolutePath());
+
+		// TODO download the data and save it according to python script
+		Gateway gateway = new Gateway(new SimpleLogger());
+		LoginCredentials cred = new LoginCredentials(j.sessionId, null, j.host, 4064);
+		ExperimenterData user = gateway.connect(cred);
+		SecurityContext ctx = new SecurityContext(user.getGroupId());
+
+		BrowseFacility browse = gateway.getFacility(BrowseFacility.class);
+		ImageData image = browse.getImage(ctx, j.imageID);
+
+		PixelsData pixels = image.getDefaultPixels();
+		pixels.getPixelSizeX();
 	}
 
 	public ImagePlus getImage() {
