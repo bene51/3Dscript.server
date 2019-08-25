@@ -85,6 +85,24 @@
 	
 	<dependencies>
 		<dependency>
+			<groupId>omero</groupId>
+			<artifactId>blitz</artifactId>
+			<version>5.4.1-ice35-b75</version>
+		</dependency>
+		<dependency>
+			<groupId>ome</groupId>
+			<artifactId>formats-bsd</artifactId>
+		</dependency>
+		
+		<dependency>
+			<groupId>ome</groupId>
+			<artifactId>formats-bsd</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>ome</groupId>
+			<artifactId>formats-gpl</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>net.imagej</groupId>
 			<artifactId>ij</artifactId>
 		</dependency>
@@ -131,6 +149,20 @@
 		<repository>
 			<id>3dscript.public</id>
 			<url>https://romulus.oice.uni-erlangen.de/maven/repository</url>
+		</repository>
+		<repository>
+			<id>ome.maven</id>
+			<url>http://artifacts.openmicroscopy.org/artifactory/maven/</url>
+		</repository>
+        <repository>
+			<id>unidata-releases</id>
+			<name>unidata-releases</name>
+			<url>https://artifacts.unidata.ucar.edu/content/repositories/unidata-releases</url>
+		</repository>
+		<repository>
+			<id>zeroc</id>
+			<name>zeroc</name>
+			<url>https://repo.zeroc.com/nexus/content/repositories/releases/</url>
 		</repository>
 	</repositories>
 </project>
