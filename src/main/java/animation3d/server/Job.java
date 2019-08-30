@@ -12,11 +12,13 @@ public class Job {
 
 	final int w, h;
 
-	final String basename;
+	final String host, sessionID, basename;
 
 	State state;
 
-	public Job(String basename, int imageID, int w, int h) {
+	public Job(String host, String sessionID, String basename, int imageID, int w, int h) {
+		this.host = host;
+		this.sessionID = sessionID;
 		this.basename = basename;
 		this.imageID = imageID;
 		this.w = w;
