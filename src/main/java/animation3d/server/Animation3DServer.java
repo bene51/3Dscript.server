@@ -48,20 +48,20 @@ public class Animation3DServer implements PlugIn {
 			IJ.handleException(e);
 			return;
 		}
+		System.out.println("Waiting for connection...");
 		while(!shutdown.get()) {
 			Socket socket = null;
 			BufferedReader in = null;
-			System.out.println("Waiting for connection...");
 			long time = System.currentTimeMillis();
 			if(time - lastAccessed > 5 * 60 * 1000)
 				shutdown.set(true);
 			try {
 				socket = server.accept();
 				lastAccessed = time;
-				System.out.println("Accepted connection from " + socket.getInetAddress());
+//				System.out.println("Accepted connection from " + socket.getInetAddress());
 				in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 				String line = in.readLine().toLowerCase().trim();
-				System.out.println(line);
+//				System.out.println(line);
 
 				if(line.startsWith("shutdown")) {
 					shutdown();
@@ -80,11 +80,11 @@ public class Animation3DServer implements PlugIn {
 						Job job = new Job(host, sessionid, basename, imageid, w, h);
 						job.setState(State.QUEUED);
 						synchronized(this) {
-							System.out.println("  server: queue new job");
+//							System.out.println("  server: queue new job");
 							queue.add(job);
-							System.out.println("  server: notify");
+//							System.out.println("  server: notify");
 							notify();
-							System.out.println("  server: notified");
+//							System.out.println("  server: notified");
 						}
 						PrintStream out = new PrintStream(socket.getOutputStream());
 						out.println("done");
@@ -115,7 +115,7 @@ public class Animation3DServer implements PlugIn {
 
 				in.close();
 				socket.close();
-				System.out.println("Closed connection");
+//				System.out.println("Closed connection");
 			} catch(SocketTimeoutException e) {
 				System.out.println(e.getMessage());
 			} catch(Exception e) {
@@ -164,9 +164,9 @@ public class Animation3DServer implements PlugIn {
 					if(currentJob != null) {
 //						PrintStream stdout = null;
 //						PrintStream stderr = null;
+//						PrintStream backupstdout = System.out;
+//						PrintStream backupstderr = System.err;
 						try {
-//							PrintStream backupstdout = System.out;
-//							PrintStream backupstderr = System.err;
 //							stdout = new PrintStream(new FileOutputStream(currentJob.basename + ".stdout.txt"));
 //							stderr = new PrintStream(new FileOutputStream(currentJob.basename + ".stderr.txt"));
 //							System.setOut(stdout);
@@ -176,13 +176,14 @@ public class Animation3DServer implements PlugIn {
 							helper.render();
 							System.out.println("  consumer: Rendered new job");
 							currentJob.setState(animation3d.server.State.FINISHED);
+//							System.exit(0);
 
-//							System.setOut(backupstdout);
-//							System.setErr(backupstderr);
 						} catch(Throwable e) {
 							e.printStackTrace();
 							currentJob.setState(animation3d.server.State.ERROR);
 						} finally {
+//							System.setOut(backupstdout);
+//							System.setErr(backupstderr);
 //							if(stdout != null)
 //								stdout.close();
 //							if(stderr != null)
@@ -199,9 +200,9 @@ public class Animation3DServer implements PlugIn {
 	}
 
 	public synchronized String getState(String basename) {
-		System.out.println("  consume: current job is " + (currentJob == null ? "null" : currentJob.basename));
+//		System.out.println("  consume: current job is " + (currentJob == null ? "null" : currentJob.basename));
 		if(currentJob != null && currentJob.basename.equals(basename)) {
-			System.out.println("  consumer: Querying state of current job");
+//			System.out.println("  consumer: Querying state of current job");
 			return currentJob.state.toString();
 		}
 
@@ -209,7 +210,7 @@ public class Animation3DServer implements PlugIn {
 			if(job.basename.equals(basename))
 				return job.state.toString();
 
-		System.out.println("  consumer: getState: didn't find job in queue, assume it's finished");
+//		System.out.println("  consumer: getState: didn't find job in queue, assume it's finished");
 		return State.FINISHED.toString();
 	}
 
