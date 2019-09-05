@@ -139,32 +139,6 @@ public class Animation3DHelper {
 			int[] channelMin = new int[nChannels]; Arrays.fill(channelMin, -1);
 			int[] channelMax = new int[nChannels]; Arrays.fill(channelMax, -1);
 
-//			for(int c = 0; c < nChannels; c++) {
-//				int r = pixels.asPixels().getChannel(c).getRed().getValue();
-//				int g = pixels.asPixels().getChannel(c).getGreen().getValue();
-//				int b = pixels.asPixels().getChannel(c).getBlue().getValue();
-//				channelColors[c] = new Color(r, g, b);
-//			}
-
-//			try {
-//				MetadataFacility m = gateway.getFacility(MetadataFacility.class);
-//				List<ChannelData> channels = m.getChannelData(ctx, j.imageID);
-//				int c = 0;
-//				for(ChannelData channel : channels) {
-//					int r = channel.asChannel().getRed().getValue();
-//					int g = channel.asChannel().getGreen().getValue();
-//					int b = channel.asChannel().getBlue().getValue();
-//					channelColors[c++] = new Color(r, g, b);
-//				}
-//			} catch (ExecutionException e2) {
-//				e2.printStackTrace();
-//			} catch (DSOutOfServiceException e) {
-//				e.printStackTrace();
-//			} catch (DSAccessException e) {
-//				e.printStackTrace();
-//			}
-
-
 			RenderingEnginePrx proxy = null;
 			long pixelsId = pixels.getId();
 			try {
