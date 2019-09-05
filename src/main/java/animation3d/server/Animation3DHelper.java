@@ -84,7 +84,7 @@ public class Animation3DHelper {
 		image.setOpenAsHyperStack(true);
 		image = new CompositeImage(image);
 		// TODO image.setTitle(j.imageID);
-		Calibration cal = iddmage.getCalibration();
+		Calibration cal = image.getCalibration();
 		System.out.println("pixelwidth = " + cal.pixelWidth);
 		System.out.println("pixeldepth = " + cal.pixelDepth);
 
