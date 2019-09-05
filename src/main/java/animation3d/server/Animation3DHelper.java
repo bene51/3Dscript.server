@@ -23,7 +23,9 @@ import ij.process.ImageProcessor;
 import ij.process.LUT;
 import ij.process.ShortProcessor;
 import omero.ServerError;
+import omero.client;
 import omero.api.RenderingEnginePrx;
+import omero.api.ServiceFactoryPrx;
 import omero.gateway.Gateway;
 import omero.gateway.LoginCredentials;
 import omero.gateway.SecurityContext;
@@ -78,12 +80,14 @@ public class Animation3DHelper {
 		int nSlices = image.getOriginalFileInfo().nImages / nChannels;
 		System.out.println("nChannels = " + nChannels);
 		System.out.println("nSlices = " + nSlices);
-		Calibration cal = image.getCalibration();
-		System.out.println("pixelwidth = " + cal.pixelWidth);
-		System.out.println("pixeldepth = " + cal.pixelDepth);
 		image.setDimensions(nChannels, nSlices, 1);
 		image.setOpenAsHyperStack(true);
 		image = new CompositeImage(image);
+		// TODO image.setTitle(j.imageID);
+		Calibration cal = iddmage.getCalibration();
+		System.out.println("pixelwidth = " + cal.pixelWidth);
+		System.out.println("pixeldepth = " + cal.pixelDepth);
+
 		System.out.println("nChannels = " + image.getNChannels());
 		System.out.println("nSlices = " + image.getNSlices());
 		renderer = new Renderer3D(image, image.getWidth(), image.getHeight());
@@ -92,6 +96,7 @@ public class Animation3DHelper {
 		j.setState(State.OPENED);
 	}
 
+	// see https://github.com/imagej/imagej-omero/blob/master/src/main/java/net/imagej/omero/DefaultOMEROSession.java
 	private void downloadAndPreprocess(Job j) {
 		File directory = new File("/tmp/3Dscript." + j.imageID);
 		if(directory.exists() && !directory.isDirectory())
@@ -106,17 +111,29 @@ public class Animation3DHelper {
 		if(!directory.mkdirs())
 			throw new RuntimeException("Cannot create directory " + directory.getAbsolutePath());
 
+
+		client cl = new client(j.host, 4064);
+
 		Gateway gateway = null;
 		try {
 			gateway = new Gateway(new SimpleLogger());
 			// TODO check out which logging options
 			LoginCredentials cred = new LoginCredentials(j.sessionID, null, j.host, 4064);
+
+			try {
+				ServiceFactoryPrx session = cl.joinSession(j.sessionID);
+				session.detachOnDestroy();
+			} catch (Exception e2) {
+				throw new RuntimeException("Cannot join session", e2);
+			}
+
 			ExperimenterData user = null;
 			try {
 				user = gateway.connect(cred);
 			} catch(Exception e) {
 				throw new RuntimeException("Cannot connect to OMERO server", e);
 			}
+			System.out.println("Connected");
 			SecurityContext ctx = new SecurityContext(user.getGroupId());
 
 			ImageData image = null;
@@ -233,10 +250,11 @@ public class Animation3DHelper {
 		}
 		finally {
 			try {
-				// gateway.joinSession();
+				gateway.close();
 			} catch(Exception e) {
 				e.printStackTrace();
 			}
+			System.out.println("disconnected from OMERO server");
 		}
 	}
 
