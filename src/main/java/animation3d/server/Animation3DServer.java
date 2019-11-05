@@ -200,11 +200,23 @@ public class Animation3DServer implements PlugIn {
 							helper.render();
 							System.out.println("  consumer: Rendered new job");
 							currentJob.setState(animation3d.server.State.FINISHED);
+							// TODO inform cancel that it is done
 //							System.exit(0);
 
 						} catch(Throwable e) {
 							e.printStackTrace();
 							currentJob.setState(animation3d.server.State.ERROR);
+							PrintWriter out = null;
+							try {
+								out = new PrintWriter(new FileWriter(currentJob.basename + ".err"));
+								out.println(e.getMessage());
+								e.printStackTrace(out);
+							} catch(Exception ex) {
+								// Ignore exceptions, if we are not able to write the stacktrace,
+								// we'll still see 'ERROR'
+							} finally {
+								out.close();
+							}
 						} finally {
 //							System.setOut(backupstdout);
 //							System.setErr(backupstderr);
