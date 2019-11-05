@@ -50,10 +50,19 @@ public class Animation3DHelper {
 
 	private Animator animator;
 
+	private boolean cancel = false;
+
 	public Animation3DHelper() {
 	}
 
+	public void cancel() {
+		this.cancel = true;
+		if(animator != null)
+			animator.cancelRendering();
+	}
+
 	public void setImage(Job j) {
+		this.cancel = false;
 		this.job = j;
 
 		if(image != null && image.getTitle().equals(Integer.toString(j.imageID))) {
@@ -62,6 +71,8 @@ public class Animation3DHelper {
 		}
 
 		downloadAndPreprocess(j);
+		if(cancel)
+			return;
 
 		// not null, open new image and create new renderer & animator
 		j.setState(State.OPENING);
@@ -90,6 +101,10 @@ public class Animation3DHelper {
 
 		System.out.println("nChannels = " + image.getNChannels());
 		System.out.println("nSlices = " + image.getNSlices());
+
+		if(cancel)
+			return;
+
 		renderer = new Renderer3D(image, image.getWidth(), image.getHeight());
 		animator = new Animator(renderer);
 
@@ -98,6 +113,9 @@ public class Animation3DHelper {
 
 	// see https://github.com/imagej/imagej-omero/blob/master/src/main/java/net/imagej/omero/DefaultOMEROSession.java
 	private void downloadAndPreprocess(Job j) {
+		if(cancel)
+			return;
+
 		File directory = new File("/tmp/3Dscript." + j.imageID);
 		if(directory.exists() && !directory.isDirectory())
 			throw new RuntimeException(directory.getAbsolutePath() + " exists but is not a directory");
@@ -215,6 +233,8 @@ public class Animation3DHelper {
 			for(int t = 0; t < nFrames; t++) {
 				ImageStack stack = new ImageStack(w, h);
 				for(int z = 0; z < nSlices; z++) {
+					if(cancel)
+						return;
 					for(int c = 0; c < nChannels; c++) {
 						Plane2D plane = null;
 						try {
@@ -288,6 +308,10 @@ public class Animation3DHelper {
 		    boolean success = false;
 		    while ((line = in.readLine()) != null) {
 		    	output.append(line).append('\n');
+				if(cancel) {
+					p.destroy();
+					return;
+				}
 		        if(line.trim().startsWith(nFrames + " frames successfully decoded, 0 decoding errors"))
 		        	success = true;
 		    }

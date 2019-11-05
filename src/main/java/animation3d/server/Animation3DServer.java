@@ -94,6 +94,14 @@ public class Animation3DServer implements PlugIn {
 						e.printStackTrace();
 					}
 				}
+				// cancel <basename>
+				else if(line.startsWith("cancel")) {
+					String basename = line.substring(line.indexOf(' ')).trim();
+					cancel(basename);
+					PrintStream out = new PrintStream(socket.getOutputStream());
+					out.println();
+					out.close();
+				}
 				// getstate <basename>
 				else if(line.startsWith("getstate")) {
 					String basename = line.substring(line.indexOf(' ')).trim();
@@ -188,6 +196,10 @@ public class Animation3DServer implements PlugIn {
 //								stdout.close();
 //							if(stderr != null)
 //								stderr.close();
+							synchronized(currentJob) {
+								currentJob.notifyAll();
+							}
+							System.out.println("now currentJob is really done");
 						}
 					}
 				}
@@ -212,6 +224,28 @@ public class Animation3DServer implements PlugIn {
 
 //		System.out.println("  consumer: getState: didn't find job in queue, assume it's finished");
 		return State.FINISHED.toString();
+	}
+
+	public synchronized void cancel(String basename) {
+		if(currentJob != null && currentJob.basename.equals(basename)) {
+			helper.cancel();
+			synchronized(currentJob) {
+				try {
+					currentJob.wait();
+					System.out.println("Job done (cancelled)");
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+			return;
+		}
+
+		queue.removeIf(new Predicate<Job>() {
+			@Override
+			public boolean test(Job t) {
+				return t.basename.equals(basename);
+			}
+		});
 	}
 
 	public synchronized double getProgress(String basename) {
