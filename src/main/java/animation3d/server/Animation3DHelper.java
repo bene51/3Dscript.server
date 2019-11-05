@@ -381,10 +381,16 @@ public class Animation3DHelper {
 			throw new RuntimeException("Error while rendering", e);
 		}
 		job.setState(State.SAVING);
-		result.getCalibration().fps = 20;
-		String outfile = job.basename + ".avi";
-		IJ.save(result, outfile);
-		convertToMP4(result.getStackSize());
+		if(result.getStackSize() > 1) {
+			result.getCalibration().fps = 20;
+			String outfile = job.basename + ".avi";
+			IJ.save(result, outfile);
+			convertToMP4(result.getStackSize());
+		} else {
+			String outfile = job.basename + ".png";
+			IJ.save(result, outfile);
+		}
+		result.close();
 	}
 
 	public double getProgress() {
