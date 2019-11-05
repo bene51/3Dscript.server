@@ -136,8 +136,6 @@ public class Animation3DServer implements PlugIn {
 					out.println(Double.toString(progress));
 					out.close();
 				}
-				else if(line.startsWith("getlog")) {
-				}
 
 				in.close();
 				socket.close();
