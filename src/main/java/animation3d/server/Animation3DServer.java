@@ -1,15 +1,18 @@
 package animation3d.server;
 
 import java.io.BufferedReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Predicate;
 
 import ij.IJ;
 import ij.plugin.PlugIn;
@@ -60,7 +63,7 @@ public class Animation3DServer implements PlugIn {
 				lastAccessed = time;
 //				System.out.println("Accepted connection from " + socket.getInetAddress());
 				in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-				String line = in.readLine().toLowerCase().trim();
+				String line = in.readLine();
 //				System.out.println(line);
 
 				if(line.startsWith("shutdown")) {
@@ -77,7 +80,22 @@ public class Animation3DServer implements PlugIn {
 						int imageid = Integer.parseInt(toks[4]);
 						int w = Integer.parseInt(toks[5]);
 						int h = Integer.parseInt(toks[6]);
-						Job job = new Job(host, sessionid, basename, imageid, w, h);
+						boolean bbVisible = Boolean.parseBoolean(toks[7]);
+						String bbColor = toks[8];
+						float bbLinewidth = Float.parseFloat(toks[9]);
+						boolean sbVisible = Boolean.parseBoolean(toks[10]);
+						String sbColor = toks[11];
+						float sbLinewidth = Float.parseFloat(toks[12]);
+						String sbPosition = toks[13].replaceAll("_", " ");
+						int sbOffset = Integer.parseInt(toks[14]);
+						int sbLength = Integer.parseInt(toks[15]);
+						Job job = new Job(host,
+								sessionid,
+								basename,
+								imageid,
+								w, h,
+								bbVisible, bbColor, bbLinewidth,
+								sbVisible, sbColor, sbLinewidth, sbPosition, sbOffset, sbLength);
 						job.setState(State.QUEUED);
 						synchronized(this) {
 //							System.out.println("  server: queue new job");

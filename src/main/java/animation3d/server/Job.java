@@ -13,16 +13,44 @@ public class Job {
 	final int w, h;
 
 	final String host, sessionID, basename;
+	final boolean bbVisible, sbVisible;
+	final String bbColor, sbColor;
+	final float bbLinewidth, sbLinewidth;
+	final String sbPosition;
+	final int sbOffset, sbLength;
 
 	State state;
 
-	public Job(String host, String sessionID, String basename, int imageID, int w, int h) {
+	public Job(String host,
+			String sessionID,
+			String basename,
+			int imageID,
+			int w,
+			int h,
+			boolean bbVisible,
+			String bbColor,
+			float bbLinewidth,
+			boolean sbVisible,
+			String sbColor,
+			float sbLinewidth,
+			String sbPosition,
+			int sbOffset,
+			int sbLength) {
 		this.host = host;
 		this.sessionID = sessionID;
 		this.basename = basename;
 		this.imageID = imageID;
 		this.w = w;
 		this.h = h;
+		this.bbVisible = bbVisible;
+		this.bbColor = bbColor;
+		this.bbLinewidth = bbLinewidth;
+		this.sbVisible = sbVisible;
+		this.sbColor = sbColor;
+		this.sbLinewidth = sbLinewidth;
+		this.sbPosition = sbPosition;
+		this.sbOffset = sbOffset;
+		this.sbLength = sbLength;
 	}
 
 	public void setState(State state) {
