@@ -85,6 +85,8 @@ public class Animation3DHelper {
 		fo.sortFileNames(true);
 		fo.openAsVirtualStack(true);
 		image = fo.openFolder(dir);
+		if(image == null)
+			throw new RuntimeException("Unable to open image from " + dir);
 		System.out.println(image.getOriginalFileInfo());
 		System.out.println(image.getOriginalFileInfo().description);
 		int nChannels = image.getOriginalFileInfo().displayRanges.length / 2;
