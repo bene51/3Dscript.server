@@ -120,6 +120,20 @@ public class Animation3DServer implements PlugIn {
 					out.println();
 					out.close();
 				}
+				// return information about:
+				// - how many jobs are before the one corresponding to basename
+				// - how many jobs are afterwards
+				// - what is the state of each job
+				// - what is the progress of each job
+				// return string:
+				// position;basename:status:progress;basename:status:progress;...
+				else if(line.startsWith("getoverallstate")) {
+					String basename = line.substring(line.indexOf(' ')).trim();
+					String state = getOverallState(basename);
+					PrintStream out = new PrintStream(socket.getOutputStream());
+					out.println(state.toString());
+					out.close();
+				}
 				// getstate <basename>
 				else if(line.startsWith("getstate")) {
 					String basename = line.substring(line.indexOf(' ')).trim();
@@ -252,6 +266,33 @@ public class Animation3DServer implements PlugIn {
 
 //		System.out.println("  consumer: getState: didn't find job in queue, assume it's finished");
 		return State.FINISHED.toString();
+	}
+
+	public synchronized String getOverallState(String basename) {
+		StringBuffer buf = new StringBuffer();
+		Job job = currentJob;
+		int indexOfBasename = -1;
+		int idx = 0;
+		if(job != null) {
+			buf.append(job.basename).append(":")
+					.append(job.state.toString()).append(":")
+					.append(helper.getProgress()).append(";");
+			if(job.basename.equals(basename))
+				indexOfBasename = idx;
+			idx++;
+		}
+		for(Job j : queue) {
+			buf.append(j.basename).append(":")
+				.append(j.state.toString()).append(":")
+				.append("0").append(";");
+			if(j.basename.equals(basename))
+				indexOfBasename = idx;
+			idx++;
+		}
+		buf.insert(0, indexOfBasename);
+		if(buf.charAt(buf.length() - 1) == ';')
+			buf.deleteCharAt(buf.length() - 1);
+		return buf.toString();
 	}
 
 	public synchronized void cancel(String basename) {
