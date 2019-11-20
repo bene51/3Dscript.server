@@ -6,8 +6,12 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import animation3d.renderer3d.BoundingBox;
 import animation3d.renderer3d.OpenCLRaycaster;
@@ -115,6 +119,33 @@ public class Animation3DHelper {
 		j.setState(State.OPENED);
 	}
 
+	/**
+	 * https://stackoverflow.com/questions/35988192/java-nio-most-concise-recursive-directory-delete
+	 * @param dir
+	 * @throws IOException
+	 */
+	private void deleteRecursively(File dir) {
+		Path rootPath = dir.toPath();
+		// before you copy and paste the snippet
+		// - read the post till the end
+		// - read the javadoc to understand what the code will do
+		//
+		// a) to follow softlinks (removes the linked file too) use
+		// Files.walk(rootPath, FileVisitOption.FOLLOW_LINKS)
+		//
+		// b) to not follow softlinks (removes only the softlink) use
+		// the snippet below
+		try (Stream<Path> walk = Files.walk(rootPath)) {
+		    walk.sorted(Comparator.reverseOrder())
+		        .map(Path::toFile)
+		        .peek(System.out::println)
+		        .forEach(File::delete);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		dir.delete();
+	}
+
 	// see https://github.com/imagej/imagej-omero/blob/master/src/main/java/net/imagej/omero/DefaultOMEROSession.java
 	private void downloadAndPreprocess(Job j) {
 		if(cancel)
@@ -146,6 +177,7 @@ public class Animation3DHelper {
 				ServiceFactoryPrx session = cl.joinSession(j.sessionID);
 				session.detachOnDestroy();
 			} catch (Exception e2) {
+				deleteRecursively(directory);
 				throw new RuntimeException("Cannot join session", e2);
 			}
 
@@ -153,6 +185,7 @@ public class Animation3DHelper {
 			try {
 				user = gateway.connect(cred);
 			} catch(Exception e) {
+				deleteRecursively(directory);
 				throw new RuntimeException("Cannot connect to OMERO server", e);
 			}
 			System.out.println("Connected");
@@ -163,6 +196,7 @@ public class Animation3DHelper {
 				BrowseFacility browse = gateway.getFacility(BrowseFacility.class);
 				image = browse.getImage(ctx, j.imageID);
 			} catch(Exception e) {
+				deleteRecursively(directory);
 				throw new RuntimeException("Cannot load image " + j.imageID, e);
 			}
 
