@@ -1,6 +1,7 @@
 package animation3d.server;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -9,6 +10,10 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.nio.file.Files;
+import java.text.SimpleDateFormat;
+import java.util.Base64;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -76,7 +81,7 @@ public class Animation3DServer implements PlugIn {
 						String[] toks = line.split(" ");
 						String host = toks[1];
 						String sessionid = toks[2];
-						String basename = toks[3];
+						String script = new String(Base64.getUrlDecoder().decode(toks[3]));
 						int imageid = Integer.parseInt(toks[4]);
 						int w = Integer.parseInt(toks[5]);
 						int h = Integer.parseInt(toks[6]);
@@ -89,6 +94,14 @@ public class Animation3DServer implements PlugIn {
 						String sbPosition = toks[13].replaceAll("_", " ");
 						int sbOffset = Integer.parseInt(toks[14]);
 						int sbLength = Integer.parseInt(toks[15]);
+//						String basename = System.getProperty("java.io.tmpdir") + user + "-" + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S");
+
+						new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss").format(new Date());
+
+						String basename = Files.createTempDirectory("3DScript").toFile().getAbsolutePath() + File.separator + new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss").format(new Date());
+						File scriptfile = new File(basename + ".animation.txt");
+						IJ.saveString(script, scriptfile.getAbsolutePath());
+
 						Job job = new Job(host,
 								sessionid,
 								basename,
@@ -105,7 +118,7 @@ public class Animation3DServer implements PlugIn {
 //							System.out.println("  server: notified");
 						}
 						PrintStream out = new PrintStream(socket.getOutputStream());
-						out.println("done");
+						out.println(basename);
 						out.close();
 					} catch(Exception e) {
 						// TODO handle exception
