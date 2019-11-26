@@ -69,11 +69,12 @@ public class Animation3DClient implements PlugIn {
 			String session,
 			int imageId,
 			String script,
-			int tgtWidth, int tgtHeight) {
+			int tgtWidth, int tgtHeight,
+			String processingHost, int processingPort) {
 
 		Socket socket;
 		try {
-			socket = new Socket("localhost", 3333);
+			socket = new Socket(processingHost, processingPort);
 		} catch (UnknownHostException e) {
 			throw new RuntimeException("Cannot start rendering", e);
 		} catch (IOException e) {
@@ -107,12 +108,15 @@ public class Animation3DClient implements PlugIn {
 	public void test() throws UnknownHostException, IOException {
 		String omeroHost = Prefs.get("Animation3DClient.omeroHost", "");
 		String omeroUser = Prefs.get("Animation3DClient.omeroUser", "");
+		String processingHost = Prefs.get("Animation3DClient.processingHost", "localhost");
+		int processingPort = Prefs.getInt("Animation3DClient.processingHost", 3333);
 
 		GenericDialog gd = new GenericDialog("Animation3DClient");
 		gd.addStringField("OMERO_Host", omeroHost, 30);
 		gd.addStringField("OMERO_User", omeroUser, 30);
 		gd.setEchoChar('*');
 		gd.addStringField("OMERO_Password", "", 30);
+		gd.addStringField("Processing_Host", processingHost + ":" + processingPort, 30);
 		gd.showDialog();
 		if(gd.wasCanceled())
 			return;
@@ -120,9 +124,14 @@ public class Animation3DClient implements PlugIn {
 		omeroHost = gd.getNextString();
 		omeroUser = gd.getNextString();
 		String omeroPass = gd.getNextString();
+		String[] tmp = gd.getNextString().split(":");
+		processingHost = tmp[0].trim();
+		processingPort = Integer.parseInt(tmp[1]);
 
 		Prefs.set("Animation3DClient.omeroHost", omeroHost);
 		Prefs.set("Animation3DClient.omeroUser", omeroUser);
+		Prefs.set("Animation3DClient.processingHost", processingHost);
+		Prefs.set("Animation3DClient.processingPort", processingPort);
 		Prefs.savePreferences();
 
 		String session = omeroLogin(omeroHost, 4064, omeroUser, omeroPass);
@@ -133,7 +142,9 @@ public class Animation3DClient implements PlugIn {
 		int tgtHeight = 600;
 
 		String basename = startRendering(
-				omeroHost, session, imageId, script, tgtWidth, tgtHeight);
+				omeroHost, session, imageId, script,
+				tgtWidth, tgtHeight,
+				processingHost, processingPort);
 		IJ.log("basename = " + basename);
 
 		try {
