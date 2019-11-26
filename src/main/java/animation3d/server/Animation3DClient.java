@@ -43,7 +43,6 @@ public class Animation3DClient implements PlugIn {
 			ExperimenterData user = gateway.connect(cred);
 			session = gateway.getSessionId(user);
 		} catch (DSOutOfServiceException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
         long end = System.currentTimeMillis();
@@ -56,10 +55,8 @@ public class Animation3DClient implements PlugIn {
 		try {
 			test();
 		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -94,6 +91,77 @@ public class Animation3DClient implements PlugIn {
 							tgtHeight );
 			String basename = in.readLine();
 			return basename;
+		} catch(Exception e) {
+			throw new RuntimeException("Cannot start rendering", e);
+		} finally {
+			try {
+				socket.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	public String getState(String processingHost, int processingPort, String basename) {
+		Socket socket;
+		try {
+			socket = new Socket(processingHost, processingPort);
+		} catch (UnknownHostException e) {
+			throw new RuntimeException("Cannot get state", e);
+		} catch (IOException e) {
+			throw new RuntimeException("Cannot get state", e);
+		}
+
+		try {
+			PrintStream out = new PrintStream(socket.getOutputStream());
+			BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+			out.println("getstate " + basename);
+			String state = in.readLine();
+			return state;
+		} catch(Exception e) {
+			throw new RuntimeException("Cannot start rendering", e);
+		} finally {
+			try {
+				socket.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	// TODO implement:
+	// read contents of "${basename}.error.txt"
+	// maybe get the error automatically with getState:
+	// ERROR base64(stack trace)
+	public String getError() {
+		return null;
+	}
+
+	// TODO implement
+	// what? the raw video stack? or the mp4? the latter would require ffmpeg to be installed
+	public void downloadResult() {
+
+	}
+
+	// TODO put getState and getProgress together (on the server)
+	public double getProgress(String processingHost, int processingPort, String basename) {
+		Socket socket;
+		try {
+			socket = new Socket(processingHost, processingPort);
+		} catch (UnknownHostException e) {
+			throw new RuntimeException("Cannot get progress", e);
+		} catch (IOException e) {
+			throw new RuntimeException("Cannot get progress", e);
+		}
+
+		try {
+			PrintStream out = new PrintStream(socket.getOutputStream());
+			BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+			out.println("getprogress " + basename);
+			double progress = Double.parseDouble(in.readLine().trim());
+			return progress;
 		} catch(Exception e) {
 			throw new RuntimeException("Cannot start rendering", e);
 		} finally {
@@ -146,12 +214,23 @@ public class Animation3DClient implements PlugIn {
 				tgtWidth, tgtHeight,
 				processingHost, processingPort);
 		IJ.log("basename = " + basename);
-
-		try {
-			gateway.close();
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		while(true) {
+			String state = getState(processingHost, processingPort, basename);
+			if(state.startsWith("ERROR")) {
+				IJ.error("Error with the rendering");
+				return;
+			}
+			if(state.startsWith("FINISHED")) {
+				IJ.log("Done");
+				return;
+			}
+			double progress = getProgress(processingHost, processingPort, basename);
+			IJ.log(state + ": " + progress);
+			try {
+				Thread.sleep(500);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 }
