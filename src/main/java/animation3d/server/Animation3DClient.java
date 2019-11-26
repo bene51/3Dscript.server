@@ -8,7 +8,6 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Base64;
 
-import animation3d.renderer3d.Scalebar;
 import ij.IJ;
 import ij.gui.GenericDialog;
 import ij.plugin.PlugIn;
@@ -29,6 +28,7 @@ public class Animation3DClient implements PlugIn {
 	private Gateway gateway = null;
 
 	public String omeroLogin(String hostname, int port, String userName, String password) {
+		long start = System.currentTimeMillis();
 		String session = null;
 		gateway = new Gateway(new SimpleLogger());
 		LoginCredentials cred = new LoginCredentials();
@@ -45,6 +45,8 @@ public class Animation3DClient implements PlugIn {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+        long end = System.currentTimeMillis();
+        System.out.println("omero login took "  + (end - start) + " ms");
         return session;
 	}
 
@@ -66,9 +68,7 @@ public class Animation3DClient implements PlugIn {
 			String session,
 			int imageId,
 			String script,
-			int tgtWidth, int tgtHeight,
-			boolean bbVisible, String bbColor, float bbLinewidth,
-			boolean sbVisible, String sbColor, float sbLinewidth, Scalebar.Position sbPosition, int sbOffset, int sbLength) {
+			int tgtWidth, int tgtHeight) {
 
 		Socket socket;
 		try {
@@ -89,16 +89,7 @@ public class Animation3DClient implements PlugIn {
 							new String(Base64.getUrlEncoder().encode(script.getBytes())) + " " +
 							imageId + " " +
 							tgtWidth + " " +
-							tgtHeight + " " +
-							bbVisible + " " +
-							bbColor + " " +
-							bbLinewidth + " " +
-							sbVisible + " " +
-							sbColor + " " +
-							sbLinewidth + " " +
-							sbPosition.toString().replaceAll(" ", "_") + " " +
-							sbOffset + " " +
-							sbLength + " ");
+							tgtHeight );
 			String basename = in.readLine();
 			return basename;
 		} catch(Exception e) {
@@ -132,19 +123,9 @@ public class Animation3DClient implements PlugIn {
 		int imageId = 201660;
 		int tgtWidth = 800;
 		int tgtHeight = 600;
-		boolean bbVisible = true;
-		String bbColor="#aaaaaa";
-		float bbLinewidth = 1.0f;
-		boolean sbVisible = true;
-		String sbColor = "#ffffff";
-		float sbLinewidth = 1.0f;
-		Scalebar.Position sbPosition = Scalebar.Position.VIEW_LOWER_LEFT;
-		int sbOffset = 10;
-		int sbLength = 100;
 
-		String basename = startRendering(omeroHost, session, imageId, script, tgtWidth, tgtHeight,
-				bbVisible, bbColor, bbLinewidth,
-				sbVisible, sbColor, sbLinewidth, sbPosition, sbOffset, sbLength);
+		String basename = startRendering(
+				omeroHost, session, imageId, script, tgtWidth, tgtHeight);
 		IJ.log("basename = " + basename);
 
 		try {

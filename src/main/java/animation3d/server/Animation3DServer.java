@@ -85,16 +85,6 @@ public class Animation3DServer implements PlugIn {
 						int imageid = Integer.parseInt(toks[4]);
 						int w = Integer.parseInt(toks[5]);
 						int h = Integer.parseInt(toks[6]);
-						boolean bbVisible = Boolean.parseBoolean(toks[7]);
-						String bbColor = toks[8];
-						float bbLinewidth = Float.parseFloat(toks[9]);
-						boolean sbVisible = Boolean.parseBoolean(toks[10]);
-						String sbColor = toks[11];
-						float sbLinewidth = Float.parseFloat(toks[12]);
-						String sbPosition = toks[13].replaceAll("_", " ");
-						int sbOffset = Integer.parseInt(toks[14]);
-						int sbLength = Integer.parseInt(toks[15]);
-//						String basename = System.getProperty("java.io.tmpdir") + user + "-" + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S");
 
 						new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss").format(new Date());
 
@@ -106,9 +96,7 @@ public class Animation3DServer implements PlugIn {
 								sessionid,
 								basename,
 								imageid,
-								w, h,
-								bbVisible, bbColor, bbLinewidth,
-								sbVisible, sbColor, sbLinewidth, sbPosition, sbOffset, sbLength);
+								w, h);
 						job.setState(State.QUEUED);
 						synchronized(this) {
 //							System.out.println("  server: queue new job");

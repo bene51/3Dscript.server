@@ -13,10 +13,8 @@ import java.util.Comparator;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
-import animation3d.renderer3d.BoundingBox;
 import animation3d.renderer3d.OpenCLRaycaster;
 import animation3d.renderer3d.Renderer3D;
-import animation3d.renderer3d.Scalebar;
 import animation3d.textanim.Animator;
 import ij.CompositeImage;
 import ij.IJ;
@@ -398,17 +396,6 @@ public class Animation3DHelper {
 			String animationFile = job.basename + ".animation.txt";
 			animation = loadText(animationFile);
 			renderer.setTargetSize(job.w, job.h);
-			BoundingBox bb = renderer.getBoundingBox();
-			bb.setVisible(job.bbVisible);
-			bb.setColor(Color.decode(job.bbColor));
-			bb.setWidth(job.bbLinewidth);
-			Scalebar sb = renderer.getScalebar();
-			sb.setVisible(job.sbVisible);
-			sb.setColor(Color.decode(job.sbColor));
-			sb.setWidth(job.sbLinewidth);
-			sb.setPosition(Scalebar.Position.fromName(job.sbPosition));
-			sb.setOffset(job.sbOffset);
-			sb.setLength(job.sbLength);
 			animator.render(animation);
 			result = animator.waitForRendering(5, TimeUnit.MINUTES);
 		} catch(Exception e) {
