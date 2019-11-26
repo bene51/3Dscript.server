@@ -9,6 +9,7 @@ import java.net.UnknownHostException;
 import java.util.Base64;
 
 import ij.IJ;
+import ij.Prefs;
 import ij.gui.GenericDialog;
 import ij.plugin.PlugIn;
 import omero.gateway.Gateway;
@@ -104,18 +105,25 @@ public class Animation3DClient implements PlugIn {
 	}
 
 	public void test() throws UnknownHostException, IOException {
+		String omeroHost = Prefs.get("Animation3DClient.omeroHost", "");
+		String omeroUser = Prefs.get("Animation3DClient.omeroUser", "");
+
 		GenericDialog gd = new GenericDialog("Animation3DClient");
-		gd.addStringField("OMERO_Host", "", 30);
-		gd.addStringField("OMERO_User", "", 30);
+		gd.addStringField("OMERO_Host", omeroHost, 30);
+		gd.addStringField("OMERO_User", omeroUser, 30);
 		gd.setEchoChar('*');
 		gd.addStringField("OMERO_Password", "", 30);
 		gd.showDialog();
 		if(gd.wasCanceled())
 			return;
 
-		String omeroHost = gd.getNextString();
-		String omeroUser = gd.getNextString();
+		omeroHost = gd.getNextString();
+		omeroUser = gd.getNextString();
 		String omeroPass = gd.getNextString();
+
+		Prefs.set("Animation3DClient.omeroHost", omeroHost);
+		Prefs.set("Animation3DClient.omeroUser", omeroUser);
+		Prefs.savePreferences();
 
 		String session = omeroLogin(omeroHost, 4064, omeroUser, omeroPass);
 
