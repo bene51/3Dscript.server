@@ -22,7 +22,6 @@ public class Animation3DClient implements PlugIn {
 
 	public static void main(String[] args) {
 		new ij.ImageJ();
-		IJ.run("Record...");
 		new Animation3DClient().run(null);
 	}
 
