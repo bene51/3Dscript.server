@@ -130,12 +130,32 @@ public class Animation3DClient implements PlugIn {
 		}
 	}
 
-	// TODO implement:
-	// read contents of "${basename}.error.txt"
-	// maybe get the error automatically with getState:
-	// ERROR base64(stack trace)
-	public String getError() {
-		return null;
+	public String getStacktrace(String processingHost, int processingPort, String basename) {
+		Socket socket;
+		try {
+			socket = new Socket(processingHost, processingPort);
+		} catch (UnknownHostException e) {
+			throw new RuntimeException("Cannot get stacktrace", e);
+		} catch (IOException e) {
+			throw new RuntimeException("Cannot get stacktrace", e);
+		}
+
+		try {
+			PrintStream out = new PrintStream(socket.getOutputStream());
+			BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+			out.println("getstacktrace " + basename);
+			String line = in.readLine();
+			return new String(Base64.getUrlDecoder().decode(line.getBytes()));
+		} catch(Exception e) {
+			throw new RuntimeException("Cannot start rendering", e);
+		} finally {
+			try {
+				socket.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 	// TODO implement
@@ -212,7 +232,9 @@ public class Animation3DClient implements PlugIn {
 			double progress = Double.parseDouble(toks[1]);
 			String state = toks[2];
 			if(state.startsWith("ERROR")) {
-				IJ.error("Error with the rendering");
+				String msg = "An error happened during rendering\n";
+				msg += getStacktrace(processingHost, processingPort, basename);
+				IJ.log(msg);
 				return;
 			}
 			if(state.startsWith("FINISHED")) {

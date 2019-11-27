@@ -143,6 +143,14 @@ public class Animation3DServer implements PlugIn {
 					out.println(state.toString());
 					out.close();
 				}
+				// getstacktrace <basename>
+				else if(line.startsWith("getstacktrace")) {
+					String basename = line.substring(line.indexOf(' ')).trim();
+					String st = getStackTrace(basename);
+					PrintStream out = new PrintStream(socket.getOutputStream());
+					out.println(new String(Base64.getUrlEncoder().encode(st.getBytes())));
+					out.close();
+				}
 
 				in.close();
 				socket.close();
@@ -244,6 +252,13 @@ public class Animation3DServer implements PlugIn {
 
 	public void shutdown() {
 		shutdown.set(true);
+	}
+
+	public synchronized String getStackTrace(String basename) {
+		File f = new File(basename + ".err");
+		if(!f.exists())
+			return "";
+		return IJ.openAsString(f.getAbsolutePath());
 	}
 
 	// position progress state
