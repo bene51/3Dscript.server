@@ -8,9 +8,9 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Base64;
 
+import fiji.util.gui.GenericDialogPlus;
 import ij.IJ;
 import ij.Prefs;
-import ij.gui.GenericDialog;
 import ij.plugin.PlugIn;
 import omero.gateway.Gateway;
 import omero.gateway.LoginCredentials;
@@ -175,15 +175,24 @@ public class Animation3DClient implements PlugIn {
 	public void test() throws UnknownHostException, IOException {
 		String omeroHost = Prefs.get("Animation3DClient.omeroHost", "");
 		String omeroUser = Prefs.get("Animation3DClient.omeroUser", "");
+		int omeroImageId = Prefs.getInt("Animation3DClient.omeroImageId", 0);
 		String processingHost = Prefs.get("Animation3DClient.processingHost", "localhost");
 		int processingPort = Prefs.getInt("Animation3DClient.processingHost", 3333);
+		String animationScript = Prefs.get("Animation3DClient.animationScript", "");
+		int targetWidth = Prefs.getInt("Animation3DClient.targetWidth", 800);
+		int targetHeight = Prefs.getInt("Animation3DClient.targetHeight", 600);
 
-		GenericDialog gd = new GenericDialog("Animation3DClient");
+
+		GenericDialogPlus gd = new GenericDialogPlus("Animation3DClient");
 		gd.addStringField("OMERO_Host", omeroHost, 30);
 		gd.addStringField("OMERO_User", omeroUser, 30);
 		gd.setEchoChar('*');
 		gd.addStringField("OMERO_Password", "", 30);
+		gd.addNumericField("OMERO_Image_ID", omeroImageId, 0);
+		gd.addNumericField("Target_Width", targetWidth, 0);
+		gd.addNumericField("Target_Height", targetHeight, 0);
 		gd.addStringField("Processing_Host", processingHost + ":" + processingPort, 30);
+		gd.addFileField("Animation_Script", animationScript, 30);
 		gd.showDialog();
 		if(gd.wasCanceled())
 			return;
@@ -191,26 +200,31 @@ public class Animation3DClient implements PlugIn {
 		omeroHost = gd.getNextString();
 		omeroUser = gd.getNextString();
 		String omeroPass = gd.getNextString();
+		omeroImageId = (int)gd.getNextNumber();
+		targetWidth = (int)gd.getNextNumber();
+		targetHeight = (int)gd.getNextNumber();
 		String[] tmp = gd.getNextString().split(":");
 		processingHost = tmp[0].trim();
 		processingPort = Integer.parseInt(tmp[1]);
+		animationScript = gd.getNextString();
 
 		Prefs.set("Animation3DClient.omeroHost", omeroHost);
 		Prefs.set("Animation3DClient.omeroUser", omeroUser);
+		Prefs.set("Animation3DClient.omeroImageId", omeroImageId);
 		Prefs.set("Animation3DClient.processingHost", processingHost);
 		Prefs.set("Animation3DClient.processingPort", processingPort);
+		Prefs.set("Animation3DClient.targetWidth", targetWidth);
+		Prefs.set("Animation3DClient.targetHeight", targetHeight);
+		Prefs.set("Animation3DClient.animationScript", animationScript);
 		Prefs.savePreferences();
 
 		String session = omeroLogin(omeroHost, 4064, omeroUser, omeroPass);
 
-		String script = "At frame 0 zoom by a factor of 0.7\nFrom frame 0 to frame 100 rotate by 360 degrees horizontally";
-		int imageId = 201660;
-		int tgtWidth = 800;
-		int tgtHeight = 600;
+		String script = IJ.openAsString(animationScript);
 
 		String basename = startRendering(
-				omeroHost, session, imageId, script,
-				tgtWidth, tgtHeight,
+				omeroHost, session, omeroImageId, script,
+				targetWidth, targetHeight,
 				processingHost, processingPort);
 		IJ.log("basename = " + basename);
 		while(true) {
