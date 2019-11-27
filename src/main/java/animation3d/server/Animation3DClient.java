@@ -101,6 +101,7 @@ public class Animation3DClient implements PlugIn {
 		}
 	}
 
+	// position progress state
 	public String getState(String processingHost, int processingPort, String basename) {
 		Socket socket;
 		try {
@@ -143,33 +144,10 @@ public class Animation3DClient implements PlugIn {
 
 	}
 
-	// TODO put getState and getProgress together (on the server)
-	public double getProgress(String processingHost, int processingPort, String basename) {
-		Socket socket;
-		try {
-			socket = new Socket(processingHost, processingPort);
-		} catch (UnknownHostException e) {
-			throw new RuntimeException("Cannot get progress", e);
-		} catch (IOException e) {
-			throw new RuntimeException("Cannot get progress", e);
-		}
+	// TODO implement
+	// attach the result to the image in OMERO
+	public void attachResultToImage() {
 
-		try {
-			PrintStream out = new PrintStream(socket.getOutputStream());
-			BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-
-			out.println("getprogress " + basename);
-			double progress = Double.parseDouble(in.readLine().trim());
-			return progress;
-		} catch(Exception e) {
-			throw new RuntimeException("Cannot start rendering", e);
-		} finally {
-			try {
-				socket.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
 	}
 
 	public void test() throws UnknownHostException, IOException {
@@ -228,7 +206,11 @@ public class Animation3DClient implements PlugIn {
 				processingHost, processingPort);
 		IJ.log("basename = " + basename);
 		while(true) {
-			String state = getState(processingHost, processingPort, basename);
+			String positionProgressState = getState(processingHost, processingPort, basename);
+			String[] toks = positionProgressState.split(" ");
+			int position = Integer.parseInt(toks[0]);
+			double progress = Double.parseDouble(toks[1]);
+			String state = toks[2];
 			if(state.startsWith("ERROR")) {
 				IJ.error("Error with the rendering");
 				return;
@@ -237,7 +219,6 @@ public class Animation3DClient implements PlugIn {
 				IJ.log("Done");
 				return;
 			}
-			double progress = getProgress(processingHost, processingPort, basename);
 			IJ.log(state + ": " + progress);
 			try {
 				Thread.sleep(500);

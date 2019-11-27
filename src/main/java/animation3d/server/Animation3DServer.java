@@ -143,14 +143,6 @@ public class Animation3DServer implements PlugIn {
 					out.println(state.toString());
 					out.close();
 				}
-				// getprogress <basename>
-				else if(line.startsWith("getprogress")) {
-					String basename = line.substring(line.indexOf(' ')).trim();
-					double progress = getProgress(basename);
-					PrintStream out = new PrintStream(socket.getOutputStream());
-					out.println(Double.toString(progress));
-					out.close();
-				}
 
 				in.close();
 				socket.close();
@@ -254,21 +246,29 @@ public class Animation3DServer implements PlugIn {
 		shutdown.set(true);
 	}
 
+	// position progress state
 	public synchronized String getState(String basename) {
-//		System.out.println("  consume: current job is " + (currentJob == null ? "null" : currentJob.basename));
 		if(currentJob != null && currentJob.basename.equals(basename)) {
-//			System.out.println("  consumer: Querying state of current job");
-			return currentJob.state.toString();
+			String state = currentJob.state.toString();
+			int position = 0;
+			double progress = helper.getProgress();
+			return position + " " + progress + " " + state;
 		}
-
-		for(Job job : queue)
-			if(job.basename.equals(basename))
-				return job.state.toString();
-
-//		System.out.println("  consumer: getState: didn't find job in queue, assume it's finished");
-		return State.FINISHED.toString();
+		int idx = 1; // start with 1 because currentJob is index 0
+		for(Job j : queue) {
+			if(j.basename.equals(basename)) {
+				double progress = 0;
+				String state = j.state.toString();
+				return idx + " " + progress + " " + state;
+			}
+			idx++;
+		}
+		idx = -1;
+		double progress = 1;
+		return idx + " " + progress + " " + State.FINISHED.toString();
 	}
 
+	// position;basename:status:progress;basename:status:progress;...
 	public synchronized String getOverallState(String basename) {
 		StringBuffer buf = new StringBuffer();
 		Job job = currentJob;
@@ -316,16 +316,5 @@ public class Animation3DServer implements PlugIn {
 				return t.basename.equals(basename);
 			}
 		});
-	}
-
-	public synchronized double getProgress(String basename) {
-		if(currentJob != null && currentJob.basename.equals(basename))
-			return helper.getProgress();
-
-		for(Job job : queue)
-			if(job.basename.equals(basename))
-				return 0;
-
-		return 1;
 	}
 }
