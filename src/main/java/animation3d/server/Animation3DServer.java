@@ -61,8 +61,8 @@ public class Animation3DServer implements PlugIn {
 			Socket socket = null;
 			BufferedReader in = null;
 			long time = System.currentTimeMillis();
-			if(time - lastAccessed > 5 * 60 * 1000)
-				shutdown.set(true);
+//			if(time - lastAccessed > 5 * 60 * 1000)
+//				shutdown.set(true);
 			try {
 				socket = server.accept();
 				lastAccessed = time;
