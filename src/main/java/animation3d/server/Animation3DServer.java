@@ -37,7 +37,7 @@ public class Animation3DServer implements PlugIn {
 		start();
 	}
 
-	private static final int PORT = 3333;
+	static final int PORT = 3333;
 
 	private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
@@ -47,8 +47,13 @@ public class Animation3DServer implements PlugIn {
 
 	private long lastAccessed = 0;
 
+	private MulticastReceiver multicastReceiver;
+
 	public void start() {
 		startConsumerThread();
+
+		multicastReceiver = new MulticastReceiver(shutdown);
+		multicastReceiver.start();
 
 		ServerSocket server = null;
 		try {
