@@ -417,10 +417,8 @@ public class Animation3DHelper {
 	public double getProgress() {
 		if(job.state != State.RENDERING)
 			return job.state.start / 100.0;
-		int from = animator.getFrom();
-		int to = animator.getTo();
-		int current = animator.getCurrent();
-		double ratio = (double)(current - from + 1) / (double)(to - from + 1);
+
+		double ratio = animator.getProgress();
 		return (State.RENDERING.start + ratio * State.RENDERING.duration) / 100.0;
 	}
 
