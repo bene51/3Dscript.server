@@ -1,7 +1,10 @@
 package animation3d.server;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -150,6 +153,14 @@ public class Animation3DServer implements PlugIn {
 					PrintStream out = new PrintStream(socket.getOutputStream());
 					out.println(new String(Base64.getUrlEncoder().encode(st.getBytes())));
 					out.close();
+				}
+				else if(line.startsWith("downloadavi")) {
+					String basename = line.substring(line.indexOf(' ')).trim();
+					sendAVI(socket, basename);
+				}
+				else if(line.startsWith("downloadpng")) {
+					String basename = line.substring(line.indexOf(' ')).trim();
+					sendPNG(socket, basename);
 				}
 
 				in.close();
@@ -309,6 +320,48 @@ public class Animation3DServer implements PlugIn {
 		if(buf.charAt(buf.length() - 1) == ';')
 			buf.deleteCharAt(buf.length() - 1);
 		return buf.toString();
+	}
+
+	public void sendAVI(Socket socket, String basename) {
+		File f = new File(basename + ".avi");
+		if(f.exists()) {
+			sendFile(socket, basename, f);
+			return;
+		}
+	}
+
+	public void sendPNG(Socket socket, String basename) {
+		File f = new File(basename + ".png");
+		if(f.exists()) {
+			sendFile(socket, basename, f);
+			return;
+		}
+	}
+
+	public void sendFile(Socket socket, String basename, File f) {
+		BufferedOutputStream outStream;
+		try {
+			outStream = new BufferedOutputStream(socket.getOutputStream());
+		} catch (IOException e) {
+			e.printStackTrace();
+			return;
+		}
+	    BufferedInputStream inStream = null;
+		try {
+			inStream = new BufferedInputStream(new FileInputStream(f));
+			final byte[] buffer = new byte[4096];
+		    for (int read = inStream.read(buffer); read >= 0; read = inStream.read(buffer))
+		        outStream.write(buffer, 0, read);
+		} catch(Exception e) {
+			e.printStackTrace();
+		} finally {
+		    try {
+				inStream.close();
+			    outStream.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 	public synchronized void cancel(String basename) {

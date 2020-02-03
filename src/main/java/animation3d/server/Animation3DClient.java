@@ -1,6 +1,10 @@
 package animation3d.server;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
@@ -11,6 +15,7 @@ import java.util.Base64;
 import fiji.util.gui.GenericDialogPlus;
 import ij.IJ;
 import ij.Prefs;
+import ij.plugin.AVI_Reader;
 import ij.plugin.PlugIn;
 import omero.gateway.Gateway;
 import omero.gateway.LoginCredentials;
@@ -158,10 +163,51 @@ public class Animation3DClient implements PlugIn {
 		}
 	}
 
-	// TODO implement
-	// what? the raw video stack? or the mp4? the latter would require ffmpeg to be installed
-	public void downloadResult() {
+	public File downloadAVI(String processingHost, int processingPort, String basename) {
+		Socket socket;
+		try {
+			socket = new Socket(processingHost, processingPort);
+		} catch (UnknownHostException e) {
+			throw new RuntimeException("Cannot download result", e);
+		} catch (IOException e) {
+			throw new RuntimeException("Cannot download result", e);
+		}
 
+		BufferedInputStream inStream = null;
+		BufferedOutputStream outStream = null;
+		try {
+			PrintStream out = new PrintStream(socket.getOutputStream());
+			inStream = new BufferedInputStream(socket.getInputStream());
+
+			out.println("downloadavi " + basename);
+
+			File f = File.createTempFile(basename, ".avi");
+			long fSize = f.length();
+			System.out.println("Animation3DClient: download result to " + f.getAbsolutePath());
+			outStream = new BufferedOutputStream(new FileOutputStream(f));
+
+			final byte[] buffer = new byte[4096];
+
+			long total = 0;
+			for (int read = inStream.read(buffer); read >= 0; read = inStream.read(buffer)) {
+		        outStream.write(buffer, 0, read);
+		        total += read;
+		        System.out.println("Animation3DClient: downloaded "  + total + " bytes out of " + fSize);
+			}
+			return f;
+		} catch(Exception e) {
+			throw new RuntimeException("Cannot start rendering", e);
+		} finally {
+			try {
+				if(inStream != null)
+					inStream.close();
+				if(outStream != null)
+					outStream.close();
+				socket.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 	// TODO implement
@@ -239,7 +285,7 @@ public class Animation3DClient implements PlugIn {
 			}
 			if(state.startsWith("FINISHED")) {
 				IJ.log("Done");
-				return;
+				break;
 			}
 			IJ.log(state + ": " + progress);
 			try {
@@ -248,5 +294,11 @@ public class Animation3DClient implements PlugIn {
 				e.printStackTrace();
 			}
 		}
+		File f = downloadAVI(processingHost, processingPort, basename);
+		AVI_Reader reader = new AVI_Reader();
+		reader.setVirtual(false);
+		reader.displayDialog(false);
+		reader.run(f.getAbsolutePath());
+		reader.getImagePlus().show();
 	}
 }
