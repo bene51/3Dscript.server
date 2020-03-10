@@ -209,6 +209,53 @@ public class Animation3DClient implements PlugIn {
 		}
 	}
 
+	public static File downloadPNG(String processingHost, int processingPort, String basename) {
+		Socket socket;
+		try {
+			socket = new Socket(processingHost, processingPort);
+		} catch (UnknownHostException e) {
+			throw new RuntimeException("Cannot download result", e);
+		} catch (IOException e) {
+			throw new RuntimeException("Cannot download result", e);
+		}
+
+		BufferedInputStream inStream = null;
+		BufferedOutputStream outStream = null;
+		try {
+			PrintStream out = new PrintStream(socket.getOutputStream());
+			inStream = new BufferedInputStream(socket.getInputStream());
+
+			out.println("downloadpng " + basename);
+
+			File f = File.createTempFile(basename, ".png");
+			long fSize = f.length();
+			System.out.println("Animation3DClient: download result to " + f.getAbsolutePath());
+			outStream = new BufferedOutputStream(new FileOutputStream(f));
+
+			final byte[] buffer = new byte[4096];
+
+			long total = 0;
+			for (int read = inStream.read(buffer); read >= 0; read = inStream.read(buffer)) {
+		        outStream.write(buffer, 0, read);
+		        total += read;
+		        System.out.println("Animation3DClient: downloaded "  + total + " bytes out of " + fSize);
+			}
+			return f;
+		} catch(Exception e) {
+			throw new RuntimeException("Cannot start rendering", e);
+		} finally {
+			try {
+				if(inStream != null)
+					inStream.close();
+				if(outStream != null)
+					outStream.close();
+				socket.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
 	// TODO implement
 	// attach the result to the image in OMERO
 	public static void attachResultToImage() {
