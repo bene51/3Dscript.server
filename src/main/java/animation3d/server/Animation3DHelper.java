@@ -117,6 +117,42 @@ public class Animation3DHelper {
 		j.setState(State.OPENED);
 	}
 
+	public static void test1(String[] args) throws Exception {
+		new ij.ImageJ();
+		String dir = "/tmp/3Dscript.214729/";
+		// dir = "/tmp/3Dscript.201660/";
+		FolderOpener fo = new FolderOpener();
+		fo.sortFileNames(true);
+		fo.openAsVirtualStack(true);
+		ImagePlus image = fo.openFolder(dir);
+		if(image == null)
+			throw new RuntimeException("Unable to open image from " + dir);
+		System.out.println(image.getOriginalFileInfo());
+		System.out.println(image.getOriginalFileInfo().description);
+		int nChannels = image.getOriginalFileInfo().displayRanges.length / 2;
+		int nSlices = image.getOriginalFileInfo().nImages / nChannels;
+		System.out.println("nChannels = " + nChannels);
+		System.out.println("nSlices = " + nSlices);
+		image.setDimensions(nChannels, nSlices, 1);
+		image.setOpenAsHyperStack(true);
+		image = new CompositeImage(image, CompositeImage.COMPOSITE);
+		image.show();
+	}
+
+	public static void test2(String[] args) throws Exception {
+		ImagePlus image = IJ.openImage("C:\\tmp\\3Dscript.214729\\0000.tif");
+		Renderer3D renderer = new Renderer3D(image, image.getWidth(), image.getHeight());
+		Animator animator = new Animator(renderer);
+
+		String animation = IJ.openAsString("d:/tmp.animation.txt");
+
+		renderer.setTargetSize(600, 450);
+		animator.render(animation);
+		ImagePlus result = animator.waitForRendering(5, TimeUnit.MINUTES);
+		// result.show();
+		IJ.save(result, "c:/users/bschmid/Desktop/test.avi");
+	}
+
 	/**
 	 * https://stackoverflow.com/questions/35988192/java-nio-most-concise-recursive-directory-delete
 	 * @param dir
