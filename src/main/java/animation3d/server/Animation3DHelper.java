@@ -98,7 +98,8 @@ public class Animation3DHelper {
 		System.out.println("nSlices = " + nSlices);
 		image.setDimensions(nChannels, nSlices, 1);
 		image.setOpenAsHyperStack(true);
-		image = new CompositeImage(image);
+		if(nChannels > 1)
+			image = new CompositeImage(image);
 		// TODO image.setTitle(j.imageID);
 		Calibration cal = image.getCalibration();
 		System.out.println("pixelwidth = " + cal.pixelWidth);
