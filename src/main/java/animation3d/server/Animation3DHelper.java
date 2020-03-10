@@ -29,7 +29,6 @@ import ij.process.ShortProcessor;
 import omero.ServerError;
 import omero.client;
 import omero.api.RenderingEnginePrx;
-import omero.api.ServiceFactoryPrx;
 import omero.gateway.Gateway;
 import omero.gateway.LoginCredentials;
 import omero.gateway.SecurityContext;
@@ -208,8 +207,9 @@ public class Animation3DHelper {
 			LoginCredentials cred = new LoginCredentials(j.sessionID, null, j.host, 4064);
 
 			try {
-				ServiceFactoryPrx session = cl.joinSession(j.sessionID);
-				session.detachOnDestroy();
+				// TODO are the following lines needed?
+				// ServiceFactoryPrx session = cl.joinSession(j.sessionID);
+				// session.detachOnDestroy();
 			} catch (Exception e2) {
 				deleteRecursively(directory);
 				throw new RuntimeException("Cannot join session", e2);
