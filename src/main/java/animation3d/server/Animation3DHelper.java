@@ -264,6 +264,7 @@ public class Animation3DHelper {
 			    	int[] rgba = proxy.getRGBA(c);
 			    	channelColors[c] = new Color(rgba[0], rgba[1], rgba[2]);
 					System.out.println("Channel " + c + " display range: [" + channelMin[c] + ", " + channelMax[c] + "]");
+					System.out.println("Channel " + c + "color: " + channelColors[c]);
 			    }
 			} catch (ServerError e1) {
 				// TODO Auto-generated catch block
