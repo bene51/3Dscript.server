@@ -148,8 +148,16 @@ public class ProcessOnDialog {
 		Vector stringFields = gd.getStringFields();
 		int nMachines = stringFields == null ? 0 : stringFields.size();
 
+		machines.clear();
+
 		for(int i = 0; i < nMachines; i++)
-			System.out.println("machine " + (i + 1) + ":  " + gd.getNextString());
+			machines.add(gd.getNextString());
+	}
+
+	private List<String> machines = new ArrayList<String>();
+
+	public List<String> getMachines() {
+		return machines;
 	}
 
 	private static boolean contains(Vector<TextField> v, String s) {
