@@ -32,6 +32,12 @@ public class Animation3DServer implements PlugIn {
 		server.start();
 	}
 
+	private static void testResourceDiscovery() {
+		AtomicBoolean shutdown = new AtomicBoolean(false);
+		MulticastReceiver multicastReceiver = new MulticastReceiver(shutdown);
+		multicastReceiver.start();
+	}
+
 	@Override
 	public void run(String arg) {
 		start();
