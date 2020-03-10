@@ -28,14 +28,13 @@ public class Animation3DClient implements PlugIn {
 	public static void main(String[] args) {
 		new ij.ImageJ();
 		new Animation3DClient().run(null);
+
 	}
 
-	private Gateway gateway = null;
-
-	public String omeroLogin(String hostname, int port, String userName, String password) {
+	public static String omeroLogin(String hostname, int port, String userName, String password) {
 		long start = System.currentTimeMillis();
 		String session = null;
-		gateway = new Gateway(new SimpleLogger());
+		Gateway gateway = new Gateway(new SimpleLogger());
 		LoginCredentials cred = new LoginCredentials();
         cred.getServer().setHostname(hostname);
         if (port > 0) {
@@ -65,7 +64,7 @@ public class Animation3DClient implements PlugIn {
 		}
 	}
 
-	public String startRendering(
+	public static String startRendering(
 			String omeroHost,
 			String session,
 			int imageId,
@@ -107,7 +106,7 @@ public class Animation3DClient implements PlugIn {
 	}
 
 	// position progress state
-	public String getState(String processingHost, int processingPort, String basename) {
+	public static String getState(String processingHost, int processingPort, String basename) {
 		Socket socket;
 		try {
 			socket = new Socket(processingHost, processingPort);
@@ -135,7 +134,7 @@ public class Animation3DClient implements PlugIn {
 		}
 	}
 
-	public String getStacktrace(String processingHost, int processingPort, String basename) {
+	public static String getStacktrace(String processingHost, int processingPort, String basename) {
 		Socket socket;
 		try {
 			socket = new Socket(processingHost, processingPort);
@@ -163,7 +162,7 @@ public class Animation3DClient implements PlugIn {
 		}
 	}
 
-	public File downloadAVI(String processingHost, int processingPort, String basename) {
+	public static File downloadAVI(String processingHost, int processingPort, String basename) {
 		Socket socket;
 		try {
 			socket = new Socket(processingHost, processingPort);
@@ -212,11 +211,11 @@ public class Animation3DClient implements PlugIn {
 
 	// TODO implement
 	// attach the result to the image in OMERO
-	public void attachResultToImage() {
+	public static void attachResultToImage() {
 
 	}
 
-	public void test() throws UnknownHostException, IOException {
+	public static void test() throws UnknownHostException, IOException {
 		String omeroHost = Prefs.get("Animation3DClient.omeroHost", "");
 		String omeroUser = Prefs.get("Animation3DClient.omeroUser", "");
 		int omeroImageId = Prefs.getInt("Animation3DClient.omeroImageId", 0);
