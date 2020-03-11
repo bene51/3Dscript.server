@@ -73,6 +73,40 @@ public class Animation3DHelper {
 			return;
 		}
 
+		if(image != null) {
+			image.close();
+			OpenCLRaycaster.close();
+		}
+
+		j.setState(State.OPENING);
+
+		if(cancel)
+			return;
+
+		image = OMEROVirtualImage.createImage(j.host, j.sessionID, j.imageID);
+		if(image == null)
+			throw new RuntimeException("Unable to open image " + j.imageID);
+
+		image.setTitle(Integer.toString(j.imageID));
+
+		if(cancel)
+			return;
+
+		renderer = new Renderer3D(image, image.getWidth(), image.getHeight());
+		animator = new Animator(renderer);
+
+		j.setState(State.OPENED);
+	}
+
+	public void setImageOld(Job j) {
+		this.cancel = false;
+		this.job = j;
+
+		if(image != null && image.getTitle().equals(Integer.toString(j.imageID))) {
+			j.setState(State.OPENED);
+			return;
+		}
+
 		downloadAndPreprocess(j);
 		if(cancel)
 			return;
