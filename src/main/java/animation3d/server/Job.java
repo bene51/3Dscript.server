@@ -14,6 +14,8 @@ public class Job {
 
 	final String host, sessionID, basename;
 
+	final int[] frames;
+
 	State state;
 
 	public Job(String host,
@@ -21,13 +23,15 @@ public class Job {
 			String basename,
 			int imageID,
 			int w,
-			int h) {
+			int h,
+			int[] frames) {
 		this.host = host;
 		this.sessionID = sessionID;
 		this.basename = basename;
 		this.imageID = imageID;
 		this.w = w;
 		this.h = h;
+		this.frames = frames;
 	}
 
 	public void setState(State state) {

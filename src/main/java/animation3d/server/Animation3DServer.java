@@ -99,6 +99,8 @@ public class Animation3DServer implements PlugIn {
 						int imageid = Integer.parseInt(toks[4]);
 						int w = Integer.parseInt(toks[5]);
 						int h = Integer.parseInt(toks[6]);
+						int[] frames = toks.length >= 8 ? ScriptAnalyzer.partitionFromString(toks[7]) : null;
+
 
 						new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss").format(new Date());
 
@@ -110,7 +112,8 @@ public class Animation3DServer implements PlugIn {
 								sessionid,
 								basename,
 								imageid,
-								w, h);
+								w, h,
+								frames);
 						job.setState(State.QUEUED);
 						synchronized(this) {
 //							System.out.println("  server: queue new job");

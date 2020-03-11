@@ -28,7 +28,6 @@ public class Animation3DClient implements PlugIn {
 	public static void main(String[] args) {
 		new ij.ImageJ();
 		new Animation3DClient().run(null);
-
 	}
 
 	public static String omeroLogin(String hostname, int port, String userName, String password) {
@@ -68,7 +67,7 @@ public class Animation3DClient implements PlugIn {
 			String omeroHost,
 			String session,
 			int imageId,
-			String script,
+			String script, String frameRange,
 			int tgtWidth, int tgtHeight,
 			String processingHost, int processingPort) {
 
@@ -85,13 +84,16 @@ public class Animation3DClient implements PlugIn {
 			PrintStream out = new PrintStream(socket.getOutputStream());
 			BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-			out.println(
+			String command =
 					"render " + omeroHost + " " +
 							session + " " +
 							new String(Base64.getUrlEncoder().encode(script.getBytes())) + " " +
 							imageId + " " +
 							tgtWidth + " " +
-							tgtHeight );
+							tgtHeight;
+			if(frameRange != null)
+				command = command + " " + frameRange;
+			out.println(command);
 			String basename = in.readLine();
 			return basename;
 		} catch(Exception e) {
@@ -313,7 +315,7 @@ public class Animation3DClient implements PlugIn {
 		String script = IJ.openAsString(animationScript);
 
 		String basename = startRendering(
-				omeroHost, session, omeroImageId, script,
+				omeroHost, session, omeroImageId, script, null,
 				targetWidth, targetHeight,
 				processingHost, processingPort);
 		IJ.log("basename = " + basename);

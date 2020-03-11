@@ -434,7 +434,10 @@ public class Animation3DHelper {
 			String animationFile = job.basename + ".animation.txt";
 			animation = loadText(animationFile);
 			renderer.setTargetSize(job.w, job.h);
-			animator.render(animation);
+			if(job.frames != null)
+				animator.render(animation, job.frames);
+			else
+				animator.render(animation);
 			result = animator.waitForRendering(5, TimeUnit.MINUTES);
 		} catch(Exception e) {
 			throw new RuntimeException("Error while rendering", e);
