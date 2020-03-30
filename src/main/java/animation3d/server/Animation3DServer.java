@@ -96,34 +96,39 @@ public class Animation3DServer implements PlugIn {
 						String host = toks[1];
 						String sessionid = toks[2];
 						String script = new String(Base64.getUrlDecoder().decode(toks[3]));
-						int imageid = Integer.parseInt(toks[4]);
+
+						String imageidString = toks[4];
 						int w = Integer.parseInt(toks[5]);
 						int h = Integer.parseInt(toks[6]);
 						int[] frames = toks.length >= 8 ? ScriptAnalyzer.partitionFromString(toks[7]) : null;
 
+						String[] idToks = imageidString.split("\\+");
+						String[] basenames = new String[idToks.length];
+						for(int i = 0; i < idToks.length; i++) {
+							String idTok = idToks[i];
+							int imageid = Integer.parseInt(idTok);
+							String basename = Files.createTempDirectory("3DScript").toFile().getAbsolutePath() + File.separator + new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss").format(new Date());
+							basenames[i] = basename;
+							File scriptfile = new File(basename + ".animation.txt");
+							IJ.saveString(script, scriptfile.getAbsolutePath());
 
-						new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss").format(new Date());
-
-						String basename = Files.createTempDirectory("3DScript").toFile().getAbsolutePath() + File.separator + new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss").format(new Date());
-						File scriptfile = new File(basename + ".animation.txt");
-						IJ.saveString(script, scriptfile.getAbsolutePath());
-
-						Job job = new Job(host,
-								sessionid,
-								basename,
-								imageid,
-								w, h,
-								frames);
-						job.setState(State.QUEUED);
-						synchronized(this) {
-//							System.out.println("  server: queue new job");
-							queue.add(job);
-//							System.out.println("  server: notify");
-							notify();
-//							System.out.println("  server: notified");
+							Job job = new Job(host,
+									sessionid,
+									basename,
+									imageid,
+									w, h,
+									frames);
+							job.setState(State.QUEUED);
+							synchronized(this) {
+	//							System.out.println("  server: queue new job");
+								queue.add(job);
+	//							System.out.println("  server: notify");
+								notify();
+	//							System.out.println("  server: notified");
+							}
 						}
 						PrintStream out = new PrintStream(socket.getOutputStream());
-						out.println(basename);
+						out.println(String.join("+", basenames));
 						out.close();
 					} catch(Exception e) {
 						// TODO handle exception
