@@ -18,6 +18,8 @@ public class Job {
 
 	State state;
 
+	int annotationId = -1;
+
 	public Job(String host,
 			String sessionID,
 			String basename,

@@ -98,7 +98,10 @@ public class Animation3DHelper {
 		j.setState(State.OPENED);
 	}
 
-	public void createAttachment(Job j) {
+	public boolean createAttachment(Job j) {
+		if(cancel)
+			return false;
+		j.setState(State.ATTACHING);
 		File file = new File(j.basename + ".mp4");
 		boolean isVideo = true;
 		int annotationId = -1;
@@ -110,6 +113,8 @@ public class Animation3DHelper {
 			annotationId = OMEROVirtualImage.createAttachment(j.host, j.sessionID, null, j.imageID, file);
 			isVideo = true;
 		}
+		j.annotationId = annotationId;
+		return isVideo;
 	}
 
 	public void setImageOld(Job j) {
