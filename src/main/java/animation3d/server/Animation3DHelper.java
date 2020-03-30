@@ -242,7 +242,7 @@ public class Animation3DHelper {
 		if(directory.exists())
 			return;
 
-		j.setState(State.DOWNLOADING);
+		// j.setState(State.DOWNLOADING);
 		if(!directory.mkdirs())
 			throw new RuntimeException("Cannot create directory " + directory.getAbsolutePath());
 
