@@ -254,6 +254,7 @@ public class Animation3DServer implements PlugIn {
 							helper.render();
 							System.out.println("  consumer: Rendered new job");
 							helper.createAttachment(currentJob);
+							helper.saveJobInfo(currentJob);
 							currentJob.setState(animation3d.server.State.FINISHED);
 							System.out.println("  consumer: Finished");
 							// TODO inform cancel that it is done
