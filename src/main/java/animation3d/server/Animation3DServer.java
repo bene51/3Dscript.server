@@ -5,6 +5,7 @@ import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -182,6 +183,13 @@ public class Animation3DServer implements PlugIn {
 					String basename = line.substring(line.indexOf(' ')).trim();
 					sendPNG(socket, basename);
 				}
+				else if(line.startsWith("attachmentid")) {
+					String basename = line.substring(line.indexOf(' ')).trim();
+					String aid = getTypeAndAttachmentId(basename);
+					PrintStream out = new PrintStream(socket.getOutputStream());
+					out.println(aid);
+					out.close();
+				}
 
 				in.close();
 				socket.close();
@@ -244,9 +252,10 @@ public class Animation3DServer implements PlugIn {
 							helper.setImage(currentJob);
 							System.out.println("  consumer: Rendering new job");
 							helper.render();
-							helper.createAttachment(currentJob);
 							System.out.println("  consumer: Rendered new job");
+							helper.createAttachment(currentJob);
 							currentJob.setState(animation3d.server.State.FINISHED);
+							System.out.println("  consumer: Finished");
 							// TODO inform cancel that it is done
 //							System.exit(0);
 
@@ -349,6 +358,32 @@ public class Animation3DServer implements PlugIn {
 			sendFile(socket, basename, f);
 			return;
 		}
+	}
+
+	public String getTypeAndAttachmentId(String basename) {
+		File infofile = new File(basename + ".info");
+		if(!infofile.exists())
+			return "";
+		String imageAnnotationId = "-1";
+		String videoAnnotationId = "-1";
+		String type = "unknown";
+		String line = null;
+		try {
+			BufferedReader buf = new BufferedReader(new FileReader(infofile));
+			while((line = buf.readLine()) != null) {
+				line = line.trim();
+				if(line.startsWith("videoAnnotationId"))
+					videoAnnotationId = line.split(":")[1].replaceAll(",", "");
+				if(line.startsWith("imageAnnotationId"))
+					imageAnnotationId = line.split(":")[1].replaceAll(",", "");
+				else if(line.startsWith("type"))
+					type = line.split(":")[1].replaceAll(",", "");
+			}
+			buf.close();
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+		return type + " " + videoAnnotationId + " " + imageAnnotationId;
 	}
 
 	public void sendPNG(Socket socket, String basename) {
