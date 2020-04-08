@@ -36,6 +36,8 @@ public class Job {
 	int videoAnnotationId = -1;
 	int imageAnnotationId = -1;
 
+	final boolean createAttachments;
+
 	Type type = Type.VIDEO;
 
 	public Job(String host,
@@ -44,7 +46,8 @@ public class Job {
 			int imageID,
 			int w,
 			int h,
-			int[] frames) {
+			int[] frames,
+			boolean createAttachments) {
 		this.host = host;
 		this.sessionID = sessionID;
 		this.basename = basename;
@@ -52,6 +55,7 @@ public class Job {
 		this.w = w;
 		this.h = h;
 		this.frames = frames;
+		this.createAttachments = createAttachments;
 	}
 
 	@Override

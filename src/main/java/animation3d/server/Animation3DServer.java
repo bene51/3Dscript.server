@@ -89,7 +89,7 @@ public class Animation3DServer implements PlugIn {
 				if(line.startsWith("shutdown")) {
 					shutdown();
 				}
-				// render <host> <sessionid> <basename> <imageid> <target width> <target height>
+				// render <host> <sessionid> <script> <imageid> <target width> <target height> frames=<frames>
 				else if(line.startsWith("render")) {
 					// TODO check how many jobs in queue, if more than X, reject and tell cient to come back later
 					try {
@@ -101,7 +101,9 @@ public class Animation3DServer implements PlugIn {
 						String imageidString = toks[4];
 						int w = Integer.parseInt(toks[5]);
 						int h = Integer.parseInt(toks[6]);
+
 						int[] frames = toks.length >= 8 ? ScriptAnalyzer.partitionFromString(toks[7]) : null;
+						boolean createAttachments = toks.length >= 9 ? Boolean.parseBoolean(toks[8]) : true;
 
 						String[] idToks = imageidString.split("\\+");
 						String[] basenames = new String[idToks.length];
@@ -118,7 +120,8 @@ public class Animation3DServer implements PlugIn {
 									basename,
 									imageid,
 									w, h,
-									frames);
+									frames,
+									createAttachments);
 							job.setState(State.QUEUED);
 							synchronized(this) {
 	//							System.out.println("  server: queue new job");
@@ -253,7 +256,8 @@ public class Animation3DServer implements PlugIn {
 							System.out.println("  consumer: Rendering new job");
 							helper.render();
 							System.out.println("  consumer: Rendered new job");
-							helper.createAttachment(currentJob);
+							if(currentJob.createAttachments)
+								helper.createAttachment(currentJob);
 							helper.saveJobInfo(currentJob);
 							currentJob.setState(animation3d.server.State.FINISHED);
 							System.out.println("  consumer: Finished");
