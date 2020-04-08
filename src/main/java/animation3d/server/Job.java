@@ -54,6 +54,22 @@ public class Job {
 		this.frames = frames;
 	}
 
+	@Override
+	public String toString() {
+		return  "{\n" +
+			"	imageID: " + imageID + ",\n" +
+			"	width: " + w + ",\n" +
+			"	height: " + h + ",\n" +
+			"	host: " + host + ",\n" +
+			"	basename: " + basename + ",\n" +
+			"	frames: " + (frames == null ? "all" : ScriptAnalyzer.partitionToString(frames)) + ",\n" +
+			"	state: " + state + ",\n" +
+			"	videoAnnotationId: " + videoAnnotationId + ",\n" +
+			"	imageAnnotationId: " + imageAnnotationId + ",\n" +
+			"	type: " + type.getType() + ",\n" +
+			"}\n";
+	}
+
 	public void setState(State state) {
 		this.state = state;
 	}

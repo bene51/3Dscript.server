@@ -113,6 +113,7 @@ public class Animation3DHelper {
 			j.imageAnnotationId = OMEROVirtualImage.createAttachment(j.host, j.sessionID, null, j.imageID, file);
 		}
 		j.type = type;
+		IJ.saveString(j.toString(), j.basename + ".info");
 	}
 
 	public void setImageOld(Job j) {
