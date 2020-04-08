@@ -8,6 +8,21 @@ import java.io.PrintStream;
 
 public class Job {
 
+	public static enum Type {
+		IMAGE("image"),
+		VIDEO("video");
+
+		public final String s;
+
+		Type(String s) {
+			this.s = s;
+		}
+
+		public String getType() {
+			return s;
+		}
+	}
+
 	final int imageID;
 
 	final int w, h;
@@ -18,7 +33,10 @@ public class Job {
 
 	State state;
 
-	int annotationId = -1;
+	int videoAnnotationId = -1;
+	int imageAnnotationId = -1;
+
+	Type type = Type.VIDEO;
 
 	public Job(String host,
 			String sessionID,

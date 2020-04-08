@@ -98,23 +98,21 @@ public class Animation3DHelper {
 		j.setState(State.OPENED);
 	}
 
-	public boolean createAttachment(Job j) {
+	public void createAttachment(Job j) {
 		if(cancel)
-			return false;
+			return;
 		j.setState(State.ATTACHING);
 		File file = new File(j.basename + ".mp4");
-		boolean isVideo = true;
-		int annotationId = -1;
+		Job.Type type = Job.Type.IMAGE;
 		if(file.exists()) {
-			annotationId = OMEROVirtualImage.createAttachment(j.host, j.sessionID, null, j.imageID, file);
-			isVideo = true;
-		} else {
-			file = new File(j.basename + ".mp4");
-			annotationId = OMEROVirtualImage.createAttachment(j.host, j.sessionID, null, j.imageID, file);
-			isVideo = true;
+			type = Job.Type.VIDEO;
+			j.videoAnnotationId = OMEROVirtualImage.createAttachment(j.host, j.sessionID, null, j.imageID, file);
 		}
-		j.annotationId = annotationId;
-		return isVideo;
+		file = new File(j.basename + ".png");
+		if(file.exists()) {
+			j.imageAnnotationId = OMEROVirtualImage.createAttachment(j.host, j.sessionID, null, j.imageID, file);
+		}
+		j.type = type;
 	}
 
 	public void setImageOld(Job j) {
