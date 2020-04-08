@@ -500,6 +500,9 @@ public class Animation3DHelper {
 			result.getCalibration().fps = 20;
 			String outfile = job.basename + ".avi";
 			IJ.save(result, outfile);
+			// save poster image
+			result.setSlice(1);
+			IJ.save(result, job.basename + ".png");
 			convertToMP4(result.getStackSize());
 		} else {
 			String outfile = job.basename + ".png";
