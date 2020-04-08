@@ -137,8 +137,9 @@ public class Animation3DServer implements PlugIn {
 				}
 				// cancel <basename>
 				else if(line.startsWith("cancel")) {
-					String basename = line.substring(line.indexOf(' ')).trim();
-					cancel(basename);
+					String rem = line.substring(line.indexOf(' ')).trim();
+					String[] basenames = rem.split(" ");
+					cancel(basenames);
 					PrintStream out = new PrintStream(socket.getOutputStream());
 					out.println();
 					out.close();
@@ -384,25 +385,27 @@ public class Animation3DServer implements PlugIn {
 		}
 	}
 
-	public synchronized void cancel(String basename) {
-		if(currentJob != null && currentJob.basename.equals(basename)) {
-			helper.cancel();
-			synchronized(currentJob) {
-				try {
-					currentJob.wait();
-					System.out.println("Job done (cancelled)");
-				} catch (InterruptedException e) {
-					e.printStackTrace();
+	public synchronized void cancel(String... basenames) {
+		for(String basename : basenames) {
+			if(currentJob != null && currentJob.basename.equals(basename)) {
+				helper.cancel();
+				synchronized(currentJob) {
+					try {
+						currentJob.wait();
+						System.out.println("Job done (cancelled)");
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
 				}
+				return;
 			}
-			return;
-		}
 
-		queue.removeIf(new Predicate<Job>() {
-			@Override
-			public boolean test(Job t) {
-				return t.basename.equals(basename);
-			}
-		});
+			queue.removeIf(new Predicate<Job>() {
+				@Override
+				public boolean test(Job t) {
+					return t.basename.equals(basename);
+				}
+			});
+		}
 	}
 }
