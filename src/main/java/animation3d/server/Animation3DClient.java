@@ -69,7 +69,8 @@ public class Animation3DClient implements PlugIn {
 			int imageId,
 			String script, String frameRange,
 			int tgtWidth, int tgtHeight,
-			String processingHost, int processingPort) {
+			String processingHost, int processingPort,
+			String basename) {
 
 		Socket socket;
 		try {
@@ -92,9 +93,12 @@ public class Animation3DClient implements PlugIn {
 							tgtWidth + " " +
 							tgtHeight;
 			if(frameRange != null)
-				command = command + " " + frameRange;
+				command = command + " frames=" + frameRange;
+			if(basename != null)
+				command = command + " basenames=" + basename;
 			out.println(command);
-			String basename = in.readLine();
+			System.out.println(command);
+			basename = in.readLine();
 			return basename;
 		} catch(Exception e) {
 			throw new RuntimeException("Cannot start rendering", e);
@@ -317,7 +321,7 @@ public class Animation3DClient implements PlugIn {
 		String basename = startRendering(
 				omeroHost, session, omeroImageId, script, null,
 				targetWidth, targetHeight,
-				processingHost, processingPort);
+				processingHost, processingPort, null);
 		IJ.log("basename = " + basename);
 		while(true) {
 			String positionProgressState = getState(processingHost, processingPort, basename);
