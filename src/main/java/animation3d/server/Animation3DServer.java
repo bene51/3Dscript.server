@@ -33,6 +33,20 @@ public class Animation3DServer implements PlugIn {
 		server.start();
 	}
 
+	// render <host> <sessionid> <script> <imageid> <target width> <target height> frames=<frames>
+	public static void oneTimeRender(String line) throws Exception {
+		Job[] jobs = createJobsFromLine(line);
+		Animation3DHelper helper = new Animation3DHelper();
+		for(Job job : jobs) {
+			helper.setImage(job);
+			helper.render();
+			if(job.createAttachments)
+				helper.createAttachment(job);
+			helper.saveJobInfo(job);
+			job.setState(animation3d.server.State.FINISHED);
+		}
+	}
+
 	private static void testResourceDiscovery() {
 		AtomicBoolean shutdown = new AtomicBoolean(false);
 		MulticastReceiver multicastReceiver = new MulticastReceiver(shutdown);
