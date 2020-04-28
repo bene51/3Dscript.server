@@ -93,36 +93,12 @@ public class Animation3DServer implements PlugIn {
 				else if(line.startsWith("render")) {
 					// TODO check how many jobs in queue, if more than X, reject and tell cient to come back later
 					try {
-						String[] toks = line.split(" ");
-						String host = toks[1];
-						String sessionid = toks[2];
-						String script = new String(Base64.getUrlDecoder().decode(toks[3]));
-
-						String imageidString = toks[4];
-						int w = Integer.parseInt(toks[5]);
-						int h = Integer.parseInt(toks[6]);
-
-						int[] frames = toks.length >= 8 ? ScriptAnalyzer.partitionFromString(toks[7]) : null;
-						boolean createAttachments = toks.length >= 9 ? Boolean.parseBoolean(toks[8]) : true;
-
-						String[] idToks = imageidString.split("\\+");
-						String[] basenames = new String[idToks.length];
-						for(int i = 0; i < idToks.length; i++) {
-							String idTok = idToks[i];
-							int imageid = Integer.parseInt(idTok);
-							String basename = Files.createTempDirectory("3DScript").toFile().getAbsolutePath() + File.separator + new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss").format(new Date());
-							basenames[i] = basename;
-							File scriptfile = new File(basename + ".animation.txt");
-							IJ.saveString(script, scriptfile.getAbsolutePath());
-
-							Job job = new Job(host,
-									sessionid,
-									basename,
-									imageid,
-									w, h,
-									frames,
-									createAttachments);
+						Job[] jobs = createJobsFromLine(line);
+						String[] basenames = new String[jobs.length];
+						for(int j = 0; j < jobs.length; j++) {
+							Job job = jobs[j];
 							job.setState(State.QUEUED);
+							basenames[j] = job.basename;
 							synchronized(this) {
 	//							System.out.println("  server: queue new job");
 								queue.add(job);
@@ -223,6 +199,64 @@ public class Animation3DServer implements PlugIn {
 	private Animation3DHelper helper = new Animation3DHelper();
 
 	private Job currentJob = null;
+
+	// render <host> <session> <urlencode(script)> <imageId1+imageId2+...> <width> <height> [frames=framerange] [basenames=basename1+basename2+...] [createAttachments=true|false]
+	private static Job[] createJobsFromLine(String line) throws Exception {
+		String[] toks = line.split(" ");
+		String host = toks[1];
+		String sessionid = toks[2];
+		String script = new String(Base64.getUrlDecoder().decode(toks[3]));
+
+		String imageidString = toks[4];
+		int w = Integer.parseInt(toks[5]);
+		int h = Integer.parseInt(toks[6]);
+
+		// optional arguments:
+		int[] frames = null;
+		String[] basenames = null;
+		boolean createAttachments = true;
+		boolean basenamesSupplied = false;
+		for(int i = 7; i < toks.length; i++) {
+			String[] keyval = toks[i].split("=");
+			if(toks[0].equals("frames"))
+				frames = ScriptAnalyzer.partitionFromString(keyval[1]);
+			if(toks[0].equals("createattachments"))
+				createAttachments = Boolean.parseBoolean(keyval[1]);
+			if(toks[0].equals("basenames")) {
+				basenamesSupplied = true;
+				basenames = keyval[1].split("\\+");
+			}
+		}
+
+		String[] idToks = imageidString.split("\\+");
+		if(!basenamesSupplied)
+			basenames = new String[idToks.length];
+
+		Job[] jobs = new Job[idToks.length];
+		for(int i = 0; i < idToks.length; i++) {
+			String idTok = idToks[i];
+			int imageid = Integer.parseInt(idTok);
+			String basename = null;
+			if(basenamesSupplied)
+				basename = basenames[i];
+			else {
+				basename = Files.createTempDirectory("3DScript").toFile().getAbsolutePath() + File.separator + new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss").format(new Date());
+				basenames[i] = basename;
+			}
+			File scriptfile = new File(basename + ".animation.txt");
+			IJ.saveString(script, scriptfile.getAbsolutePath());
+
+			Job job = new Job(host,
+					sessionid,
+					basename,
+					imageid,
+					w, h,
+					frames,
+					createAttachments);
+			jobs[i] = job;
+		}
+		return jobs;
+	}
 
 	private void startConsumerThread() {
 		new Thread() {
