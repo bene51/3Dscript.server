@@ -159,7 +159,7 @@ public class Animation3D_Client implements PlugIn {
 					String basename = Animation3DClient.startRendering(
 							omeroH, session, omeroImgId, script, ScriptAnalyzer.partitionToString(partition),
 							tgtW, tgtH,
-							processingHost, processingPort);
+							processingHost, processingPort, null);
 					IJ.log("basename = " + basename);
 					while(true) {
 						String positionProgressState = Animation3DClient.getState(processingHost, processingPort, basename);
