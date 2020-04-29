@@ -10,6 +10,7 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.Base64;
 
 import fiji.util.gui.GenericDialogPlus;
@@ -63,14 +64,14 @@ public class Animation3DClient implements PlugIn {
 		}
 	}
 
-	public static String startRendering(
+	public static String[] startRendering(
 			String omeroHost,
 			String session,
-			int imageId,
+			int[] imageId,
 			String script, String frameRange,
 			int tgtWidth, int tgtHeight,
 			String processingHost, int processingPort,
-			String basename) {
+			String[] basenames) {
 
 		Socket socket;
 		try {
@@ -85,21 +86,26 @@ public class Animation3DClient implements PlugIn {
 			PrintStream out = new PrintStream(socket.getOutputStream());
 			BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
+			StringBuilder imString = new StringBuilder();
+			imString.append(imageId[0]);
+			for(int i = 1; i < imageId.length; i++)
+				imString.append("+").append(imageId[i]);
+
 			String command =
 					"render " + omeroHost + " " +
 							session + " " +
 							new String(Base64.getUrlEncoder().encode(script.getBytes())) + " " +
-							imageId + " " +
+							imString.toString() + " " +
 							tgtWidth + " " +
 							tgtHeight;
 			if(frameRange != null)
 				command = command + " frames=" + frameRange;
-			if(basename != null)
-				command = command + " basenames=" + basename;
+			if(basenames != null)
+				command = command + " basenames=" + String.join("+", basenames);
 			out.println(command);
 			System.out.println(command);
-			basename = in.readLine();
-			return basename;
+			basenames = in.readLine().split("\\+");
+			return basenames;
 		} catch(Exception e) {
 			throw new RuntimeException("Cannot start rendering", e);
 		} finally {
@@ -262,16 +268,10 @@ public class Animation3DClient implements PlugIn {
 		}
 	}
 
-	// TODO implement
-	// attach the result to the image in OMERO
-	public static void attachResultToImage() {
-
-	}
-
 	public static void test() throws UnknownHostException, IOException {
 		String omeroHost = Prefs.get("Animation3DClient.omeroHost", "");
 		String omeroUser = Prefs.get("Animation3DClient.omeroUser", "");
-		int omeroImageId = Prefs.getInt("Animation3DClient.omeroImageId", 0);
+		String omeroImageId = Prefs.get("Animation3DClient.omeroImageId", "");
 		String processingHost = Prefs.get("Animation3DClient.processingHost", "localhost");
 		int processingPort = Prefs.getInt("Animation3DClient.processingHost", 3333);
 		String animationScript = Prefs.get("Animation3DClient.animationScript", "");
@@ -284,7 +284,7 @@ public class Animation3DClient implements PlugIn {
 		gd.addStringField("OMERO_User", omeroUser, 30);
 		gd.setEchoChar('*');
 		gd.addStringField("OMERO_Password", "", 30);
-		gd.addNumericField("OMERO_Image_ID", omeroImageId, 0);
+		gd.addStringField("OMERO_Image_ID", omeroImageId);
 		gd.addNumericField("Target_Width", targetWidth, 0);
 		gd.addNumericField("Target_Height", targetHeight, 0);
 		gd.addStringField("Processing_Host", processingHost + ":" + processingPort, 30);
@@ -296,7 +296,7 @@ public class Animation3DClient implements PlugIn {
 		omeroHost = gd.getNextString();
 		omeroUser = gd.getNextString();
 		String omeroPass = gd.getNextString();
-		omeroImageId = (int)gd.getNextNumber();
+		omeroImageId = gd.getNextString();
 		targetWidth = (int)gd.getNextNumber();
 		targetHeight = (int)gd.getNextNumber();
 		String[] tmp = gd.getNextString().split(":");
@@ -318,39 +318,47 @@ public class Animation3DClient implements PlugIn {
 
 		String script = IJ.openAsString(animationScript);
 
-		String basename = startRendering(
-				omeroHost, session, omeroImageId, script, null,
+		String[] itoks = omeroImageId.split(",");
+		int[] imageIds = new int[itoks.length];
+		for(int i = 0; i < itoks.length; i++)
+			imageIds[i] = Integer.parseInt(itoks[i].trim());
+
+		String[] basenames = startRendering(
+				omeroHost, session, imageIds, script, null,
 				targetWidth, targetHeight,
 				processingHost, processingPort, null);
-		IJ.log("basename = " + basename);
-		while(true) {
-			String positionProgressState = getState(processingHost, processingPort, basename);
-			String[] toks = positionProgressState.split(" ");
-			int position = Integer.parseInt(toks[0]);
-			double progress = Double.parseDouble(toks[1]);
-			String state = toks[2];
-			if(state.startsWith("ERROR")) {
-				String msg = "An error happened during rendering\n";
-				msg += getStacktrace(processingHost, processingPort, basename);
-				IJ.log(msg);
-				return;
+		IJ.log("basenames = " + Arrays.toString(basenames));
+		outer:
+		for(String basename : basenames) {
+			while(true) {
+				String positionProgressState = getState(processingHost, processingPort, basename);
+				String[] toks = positionProgressState.split(" ");
+				int position = Integer.parseInt(toks[0]);
+				double progress = Double.parseDouble(toks[1]);
+				String state = toks[2];
+				if(state.startsWith("ERROR")) {
+					String msg = "An error happened during rendering\n";
+					msg += getStacktrace(processingHost, processingPort, basename);
+					IJ.log(msg);
+					continue outer;
+				}
+				if(state.startsWith("FINISHED")) {
+					IJ.log("Done");
+					break;
+				}
+				IJ.log(state + ": " + progress);
+				try {
+					Thread.sleep(500);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
 			}
-			if(state.startsWith("FINISHED")) {
-				IJ.log("Done");
-				break;
-			}
-			IJ.log(state + ": " + progress);
-			try {
-				Thread.sleep(500);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+			File f = downloadAVI(processingHost, processingPort, basename);
+			AVI_Reader reader = new AVI_Reader();
+			reader.setVirtual(false);
+			reader.displayDialog(false);
+			reader.run(f.getAbsolutePath());
+			reader.getImagePlus().show();
 		}
-		File f = downloadAVI(processingHost, processingPort, basename);
-		AVI_Reader reader = new AVI_Reader();
-		reader.setVirtual(false);
-		reader.displayDialog(false);
-		reader.run(f.getAbsolutePath());
-		reader.getImagePlus().show();
 	}
 }

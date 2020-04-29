@@ -10,6 +10,7 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -46,10 +47,30 @@ public class Animation3D_Client implements PlugIn {
 
 	List<String> processingMachines = Arrays.asList(new String[] {"localhost"});
 
+	private static int[] indicesForRange(String range) {
+		ArrayList<Integer> indices = new ArrayList<Integer>();
+		String[] toks = range.split(",");
+		for(String tok : toks) {
+			int p = tok.indexOf('-');
+			if(p < 0)
+				indices.add(Integer.parseInt(tok));
+			else {
+				int from = Integer.parseInt(tok.substring(0, p).trim());
+				int to = Integer.parseInt(tok.substring(p + 1).trim());
+				for(int i = from; i <= to; i++)
+					indices.add(i);
+			}
+		}
+		int[] ret = new int[indices.size()];
+		for(int i = 0; i < ret.length; i++)
+			ret[i] = indices.get(i);
+		return ret;
+	}
+
 	public void test() throws UnknownHostException, IOException {
 		String omeroHost = Prefs.get("Animation3DClient.omeroHost", "");
 		String omeroUser = Prefs.get("Animation3DClient.omeroUser", "");
-		int omeroImageId = Prefs.getInt("Animation3DClient.omeroImageId", 0);
+		String omeroImageId = Prefs.get("Animation3DClient.omeroImageId", "");
 		String animationScript = Prefs.get("Animation3DClient.animationScript", "");
 		int targetWidth = Prefs.getInt("Animation3DClient.targetWidth", 800);
 		int targetHeight = Prefs.getInt("Animation3DClient.targetHeight", 600);
@@ -60,7 +81,7 @@ public class Animation3D_Client implements PlugIn {
 		gd.addStringField("OMERO_User", omeroUser, 30);
 		gd.setEchoChar('*');
 		gd.addStringField("OMERO_Password", "", 30);
-		gd.addNumericField("OMERO_Image_ID", omeroImageId, 0);
+		gd.addStringField("OMERO_Image_ID", omeroImageId);
 		gd.addNumericField("Target_Width", targetWidth, 0);
 		gd.addNumericField("Target_Height", targetHeight, 0);
 		gd.addFileField("Animation_Script", animationScript, 30);
@@ -79,7 +100,7 @@ public class Animation3D_Client implements PlugIn {
 		omeroHost = gd.getNextString();
 		omeroUser = gd.getNextString();
 		String omeroPass = gd.getNextString();
-		omeroImageId = (int)gd.getNextNumber();
+		omeroImageId = gd.getNextString();
 		targetWidth = (int)gd.getNextNumber();
 		targetHeight = (int)gd.getNextNumber();
 		animationScript = gd.getNextString();
@@ -108,6 +129,8 @@ public class Animation3D_Client implements PlugIn {
 		} catch(Exception e) {
 			IJ.handleException(e);
 		}
+
+		int[] imageIds = indicesForRange(omeroImageId);
 
 		final String session = Animation3DClient.omeroLogin(omeroHost, 4064, omeroUser, omeroPass);
 
@@ -142,70 +165,74 @@ public class Animation3D_Client implements PlugIn {
 		int nFrames = 0;
 		for(int i = 0; i < nPartitions; i++)
 			nFrames += partitions[i].length;
-		ImageProcessor[] rendered = new ImageProcessor[nFrames];
+		ImageProcessor[][] rendered = new ImageProcessor[imageIds.length][nFrames];
 		long start = System.currentTimeMillis();
 		for(int i = 0; i < nPartitions; i++) {
 			final String processingHost = processingMachines.get(i);
 			final int processingPort = 3333;
 			final ProgressBar progressbar = progresses[i];
 			final String omeroH = omeroHost;
-			final int omeroImgId = omeroImageId;
+			final int[] iIds = imageIds;
 			final int tgtW = targetWidth;
 			final int tgtH = targetHeight;
 			final int[] partition = partitions[i];
 			exec.submit(new Runnable() {
 				@Override
 				public void run() {
-					String basename = Animation3DClient.startRendering(
-							omeroH, session, omeroImgId, script, ScriptAnalyzer.partitionToString(partition),
+					String[] basenames = Animation3DClient.startRendering(
+							omeroH, session, iIds, script, ScriptAnalyzer.partitionToString(partition),
 							tgtW, tgtH,
 							processingHost, processingPort, null);
-					IJ.log("basename = " + basename);
-					while(true) {
-						String positionProgressState = Animation3DClient.getState(processingHost, processingPort, basename);
-						String[] toks = positionProgressState.split(" ");
-						int position = Integer.parseInt(toks[0]);
-						double progress = Double.parseDouble(toks[1]);
-						String state = toks[2];
-						System.out.println(progress);
-						progressbar.setState(state);
-						progressbar.show(progress);
-						if(state.startsWith("ERROR")) {
-							progressbar.setState("ERROR");
-							String msg = "An error happened during rendering\n";
-							msg += Animation3DClient.getStacktrace(processingHost, processingPort, basename);
-							IJ.log(msg);
-							return;
+					IJ.log("basename = " + Arrays.toString(basenames));
+					outer:
+					for(int b = 0; b < basenames.length; b++) {
+						String basename = basenames[b];
+						while(true) {
+							String positionProgressState = Animation3DClient.getState(processingHost, processingPort, basename);
+							String[] toks = positionProgressState.split(" ");
+							int position = Integer.parseInt(toks[0]);
+							double progress = Double.parseDouble(toks[1]);
+							String state = toks[2];
+							System.out.println(progress);
+							progressbar.setState(state);
+							progressbar.show(progress);
+							if(state.startsWith("ERROR")) {
+								progressbar.setState("ERROR");
+								String msg = "An error happened during rendering\n";
+								msg += Animation3DClient.getStacktrace(processingHost, processingPort, basename);
+								IJ.log(msg);
+								continue outer;
+							}
+							if(state.startsWith("FINISHED")) {
+								progressbar.setState("FINISHED");
+								break;
+							}
+							try {
+								Thread.sleep(500);
+							} catch (InterruptedException e) {
+								e.printStackTrace();
+							}
 						}
-						if(state.startsWith("FINISHED")) {
-							progressbar.setState("FINISHED");
-							break;
+						progressbar.show(0.99);
+						int nFrames = partition.length;
+						ImagePlus video = null;
+						if(nFrames > 1) {
+							File f = Animation3DClient.downloadAVI(processingHost, processingPort, basename);
+							AVI_Reader reader = new AVI_Reader();
+							reader.setVirtual(false);
+							reader.displayDialog(false);
+							reader.run(f.getAbsolutePath());
+							video = reader.getImagePlus();
+							// video.show();
 						}
-						try {
-							Thread.sleep(500);
-						} catch (InterruptedException e) {
-							e.printStackTrace();
+						else {
+							File f = Animation3DClient.downloadPNG(processingHost, processingPort, basename);
+							video = IJ.openImage(f.getAbsolutePath());
+							// video.show();
 						}
+						for(int f = 0; f < partition.length; f++)
+							rendered[b][partition[f]] = video.getStack().getProcessor(f + 1);
 					}
-					progressbar.show(0.99);
-					int nFrames = partition.length;
-					ImagePlus video = null;
-					if(nFrames > 1) {
-						File f = Animation3DClient.downloadAVI(processingHost, processingPort, basename);
-						AVI_Reader reader = new AVI_Reader();
-						reader.setVirtual(false);
-						reader.displayDialog(false);
-						reader.run(f.getAbsolutePath());
-						video = reader.getImagePlus();
-						// video.show();
-					}
-					else {
-						File f = Animation3DClient.downloadPNG(processingHost, processingPort, basename);
-						video = IJ.openImage(f.getAbsolutePath());
-						// video.show();
-					}
-					for(int f = 0; f < partition.length; f++)
-						rendered[partition[f]] = video.getStack().getProcessor(f + 1);
 				}
 			});
 		}
@@ -218,10 +245,12 @@ public class Animation3D_Client implements PlugIn {
 		long end = System.currentTimeMillis();
 		System.out.println("Rendering took " + (end - start) + " ms");
 
-		ImageStack stack = new ImageStack(rendered[0].getWidth(), rendered[0].getHeight());
-		for(int i = 0; i < rendered.length; i++)
-			stack.addSlice(rendered[i]);
-		ImagePlus result = new ImagePlus("output", stack);
-		result.show();
+		for(int b = 0; b < imageIds.length; b++) {
+			ImageStack stack = new ImageStack(rendered[b][0].getWidth(), rendered[b][0].getHeight());
+			for(int i = 0; i < rendered[b].length; i++)
+				stack.addSlice(rendered[b][i]);
+			ImagePlus result = new ImagePlus("output", stack);
+			result.show();
+		}
 	}
 }
