@@ -53,6 +53,8 @@ public class Animation3DHelper {
 
 	private Animator animator;
 
+	private OMEROVirtualImage omeroConnection = null;
+
 	private boolean cancel = false;
 
 	public Animation3DHelper() {
@@ -67,6 +69,12 @@ public class Animation3DHelper {
 	public void setImage(Job j) {
 		this.cancel = false;
 		this.job = j;
+
+		if(omeroConnection == null || !omeroConnection.checkSession(j.sessionID)) {
+			if(omeroConnection != null)
+				omeroConnection.close();
+			omeroConnection = new OMEROVirtualImage(j.host, j.sessionID, null);
+		}
 
 		if(image != null && image.getTitle().equals(Integer.toString(j.imageID))) {
 			j.setState(State.OPENED);
@@ -83,7 +91,7 @@ public class Animation3DHelper {
 		if(cancel)
 			return;
 
-		image = OMEROVirtualImage.createImage(j.host, j.sessionID, j.imageID);
+		image = omeroConnection.createImage(j.imageID);
 		if(image == null)
 			throw new RuntimeException("Unable to open image " + j.imageID);
 
@@ -106,11 +114,11 @@ public class Animation3DHelper {
 		Job.Type type = Job.Type.IMAGE;
 		if(file.exists()) {
 			type = Job.Type.VIDEO;
-			j.videoAnnotationId = OMEROVirtualImage.createAttachment(j.host, j.sessionID, null, j.imageID, file);
+			j.videoAnnotationId = omeroConnection.createAttachment(j.imageID, file);
 		}
 		file = new File(j.basename + ".png");
 		if(file.exists()) {
-			j.imageAnnotationId = OMEROVirtualImage.createAttachment(j.host, j.sessionID, null, j.imageID, file);
+			j.imageAnnotationId = omeroConnection.createAttachment(j.imageID, file);
 		}
 		j.type = type;
 	}

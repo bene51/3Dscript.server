@@ -36,17 +36,11 @@ import omero.model.OriginalFile;
 import omero.model.OriginalFileI;
 import omero.model.enums.ChecksumAlgorithmSHA1160;
 
-public class OMEROVirtualImage {
+public class OMEROVirtualImage implements AutoCloseable {
 
-	public static final String NAME_SPACE_TO_SET = "oice/3Dscript";
+	private Gateway gateway = null;
 
-	public static ImagePlus createImage(String host, String sessionID, int imageID) {
-		return createImage(host, sessionID, null, imageID);
-	}
-
-	private static ImagePlus createImage(String host, String username, String password, int imageID) {
-
-		Gateway gateway = null;
+	public OMEROVirtualImage(String host, String username, String password) {
 		gateway = new Gateway(new SimpleLogger());
 		// TODO check out which logging options
 		LoginCredentials cred = new LoginCredentials(username, password, host, 4064);
@@ -59,12 +53,32 @@ public class OMEROVirtualImage {
 			throw new RuntimeException("Cannot join session", e2);
 		}
 
-		ExperimenterData user = null;
 		try {
-			user = gateway.connect(cred);
+			gateway.connect(cred);
 		} catch(Exception e) {
 			throw new RuntimeException("Cannot connect to OMERO server", e);
 		}
+	}
+
+	public boolean checkSession(String sessionId) {
+		try {
+			return gateway.getSessionId(gateway.getLoggedInUser()).equals(sessionId);
+		} catch (DSOutOfServiceException e) {
+			throw new RuntimeException("Cannot check session", e);
+		}
+	}
+
+	@Override
+	public void close() {
+		if(gateway != null)
+			gateway.disconnect();
+	}
+
+	public static final String NAME_SPACE_TO_SET = "oice/3Dscript";
+
+	public ImagePlus createImage(int imageID) {
+
+		ExperimenterData user = gateway.getLoggedInUser();
 		System.out.println("Connected");
 		SecurityContext ctx = new SecurityContext(user.getGroupId());
 
@@ -153,27 +167,10 @@ public class OMEROVirtualImage {
 		return ci;
 	}
 
-	public static int createAttachment(String host, String username, String password, int imageID, File file) {
-		Gateway gateway = null;
-		gateway = new Gateway(new SimpleLogger());
-		// TODO check out which logging options
-		LoginCredentials cred = new LoginCredentials(username, password, host, 4064);
+	public int createAttachment(int imageID, File file) {
 
-		try {
-			// TODO are the following lines needed?
-			// ServiceFactoryPrx session = cl.joinSession(j.sessionID);
-			// session.detachOnDestroy();
-		} catch (Exception e2) {
-			throw new RuntimeException("Cannot join session", e2);
-		}
+		ExperimenterData user = gateway.getLoggedInUser();
 
-		ExperimenterData user = null;
-		try {
-			user = gateway.connect(cred);
-		} catch(Exception e) {
-			throw new RuntimeException("Cannot connect to OMERO server", e);
-		}
-		System.out.println("Connected");
 		SecurityContext ctx = new SecurityContext(user.getGroupId());
 
 		ImageData image = null;
@@ -302,6 +299,10 @@ public class OMEROVirtualImage {
 		String pass = "";
 		new ij.ImageJ();
 		// createImage(host, user,  pass, 201660).show();
-		createAttachment(host, user, "", 201660, new File("D:/flybrain.rgb.ffmpeg.mp4"));
+		try(
+			OMEROVirtualImage vi = new OMEROVirtualImage(host, user, pass);
+		) {
+			vi.createAttachment(201660, new File("D:/flybrain.rgb.ffmpeg.mp4"));
+		}
 	}
 }
