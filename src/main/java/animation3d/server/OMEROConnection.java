@@ -36,11 +36,11 @@ import omero.model.OriginalFile;
 import omero.model.OriginalFileI;
 import omero.model.enums.ChecksumAlgorithmSHA1160;
 
-public class OMEROVirtualImage implements AutoCloseable {
+public class OMEROConnection implements AutoCloseable {
 
 	private Gateway gateway = null;
 
-	public OMEROVirtualImage(String host, String username, String password) {
+	public OMEROConnection(String host, String username, String password) {
 		gateway = new Gateway(new SimpleLogger());
 		// TODO check out which logging options
 		LoginCredentials cred = new LoginCredentials(username, password, host, 4064);
@@ -300,7 +300,7 @@ public class OMEROVirtualImage implements AutoCloseable {
 		new ij.ImageJ();
 		// createImage(host, user,  pass, 201660).show();
 		try(
-			OMEROVirtualImage vi = new OMEROVirtualImage(host, user, pass);
+			OMEROConnection vi = new OMEROConnection(host, user, pass);
 		) {
 			vi.createAttachment(201660, new File("D:/flybrain.rgb.ffmpeg.mp4"));
 		}

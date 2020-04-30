@@ -53,7 +53,7 @@ public class Animation3DHelper {
 
 	private Animator animator;
 
-	private OMEROVirtualImage omeroConnection = null;
+	private OMEROConnection omeroConnection = null;
 
 	private boolean cancel = false;
 
@@ -73,7 +73,7 @@ public class Animation3DHelper {
 		if(omeroConnection == null || !omeroConnection.checkSession(j.sessionID)) {
 			if(omeroConnection != null)
 				omeroConnection.close();
-			omeroConnection = new OMEROVirtualImage(j.host, j.sessionID, null);
+			omeroConnection = new OMEROConnection(j.host, j.sessionID, null);
 		}
 
 		if(image != null && image.getTitle().equals(Integer.toString(j.imageID))) {
