@@ -16,6 +16,7 @@ import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
@@ -36,12 +37,15 @@ public class Animation3DServer implements PlugIn {
 	// render <host> <sessionid> <script> <imageid> <target width> <target height> frames=<frames>
 	public static void oneTimeRender(String line) throws Exception {
 		Job[] jobs = createJobsFromLine(line);
-		Animation3DHelper helper = new Animation3DHelper();
+		Animation3DHelper helper = null;
+		if(line.startsWith("renderOMERO"))
+			helper = new OMEROHelper();
+		else if(line.startsWith("renderSharedFS"))
+			helper = new SharedFSHelper();
 		for(Job job : jobs) {
 			helper.setImage(job);
 			helper.render();
-			if(job.createAttachments)
-				helper.createAttachment(job);
+			helper.uploadResults(job);
 			helper.saveJobInfo(job);
 			job.setState(animation3d.server.State.FINISHED);
 		}
@@ -210,12 +214,41 @@ public class Animation3DServer implements PlugIn {
 		System.exit(0);
 	}
 
-	private Animation3DHelper helper = new Animation3DHelper();
+	private static int[] parsePlusMinusRange(String s) {
+		ArrayList<Integer> indices = new ArrayList<Integer>();
+		String[] toks = s.split("\\+");
+		for(String tok : toks) {
+			int p = tok.indexOf('-');
+			if(p < 0)
+				indices.add(Integer.parseInt(tok));
+			else {
+				int from = Integer.parseInt(tok.substring(0, p).trim());
+				int to = Integer.parseInt(tok.substring(p + 1).trim());
+				for(int i = from; i <= to; i++)
+					indices.add(i);
+			}
+		}
+		int[] ret = new int[indices.size()];
+		for(int i = 0; i < ret.length; i++)
+			ret[i] = indices.get(i);
+		return ret;
+	}
+
+	private Animation3DHelper omeroHelper = new OMEROHelper();
+	private Animation3DHelper sharedFSHelper = new SharedFSHelper();
 
 	private Job currentJob = null;
 
+	private Animation3DHelper getHelper(Job job) {
+		if(job instanceof OMEROJob)
+			return omeroHelper;
+		if(job instanceof SharedFSJob)
+			return sharedFSHelper;
+		return null;
+	}
+
 	// render <host> <session> <urlencode(script)> <imageId1+imageId2+...> <width> <height> [frames=framerange] [basenames=basename1+basename2+...] [createAttachments=true|false]
-	private static Job[] createJobsFromLine(String line) throws Exception {
+	private static Job[] createOMEROJobsFromLine(String line) throws Exception {
 		String[] toks = line.split(" ");
 		String host = toks[1];
 		String sessionid = toks[2];
@@ -260,7 +293,7 @@ public class Animation3DServer implements PlugIn {
 			File scriptfile = new File(basename + ".animation.txt");
 			IJ.saveString(script, scriptfile.getAbsolutePath());
 
-			Job job = new Job(host,
+			Job job = new OMEROJob(host,
 					sessionid,
 					basename,
 					imageid,
@@ -270,6 +303,65 @@ public class Animation3DServer implements PlugIn {
 			jobs[i] = job;
 		}
 		return jobs;
+	}
+
+	// render <urlencode(script)> user[@domain] urlencode(password) url|series,url:series <width> <height> [frames=framerange] [uploadResults=false]
+	// where url = smb://romulus.oice.uni-erlangen.de/users/bschmid/cell.lif
+	// where series = 1-3+5-7+8+10
+	private static Job[] createSharedFSJobsFromLine(String line) throws Exception {
+		String[] toks = line.split(" ");
+		String script = new String(Base64.getUrlDecoder().decode(toks[1]));
+		String userdomain = toks[2];
+		String password = new String(Base64.getUrlDecoder().decode(toks[3]));
+		String urlsAndSeries = toks[4];
+
+		int w = Integer.parseInt(toks[5]);
+		int h = Integer.parseInt(toks[6]);
+
+		// optional arguments:
+		int[] frames = null;
+		boolean uploadResults = true;
+		for(int i = 7; i < toks.length; i++) {
+			String[] keyval = toks[i].split("=");
+			if(toks[0].equals("frames"))
+				frames = ScriptAnalyzer.partitionFromString(keyval[1]);
+			if(toks[0].equals("uploadresults"))
+				uploadResults = Boolean.parseBoolean(keyval[1]);
+		}
+
+		String domain = "";
+		String username = userdomain;
+		int atIndex = userdomain.indexOf('@');
+		if(atIndex >= 0) {
+			username = userdomain.substring(0, atIndex);
+			domain = userdomain.substring(atIndex + 1);
+		}
+
+		ArrayList<Job> jobs = new ArrayList<Job>();
+
+		String[] ptoks = urlsAndSeries.split(",");
+		for(String ptok : ptoks) {
+			int colon = ptok.indexOf('|');
+			String url = ptok.substring(0, colon);
+			int[] series = parsePlusMinusRange(ptok.substring(colon + 1));
+			for(int s : series) {
+				String basename = Files.createTempDirectory("3DScript").toFile().getAbsolutePath() + File.separator + new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss").format(new Date());
+				Job j = new SharedFSJob(domain, username, password, url, s, basename, w, h, frames, uploadResults);
+				jobs.add(j);
+				File scriptfile = new File(j.basename + ".animation.txt");
+				IJ.saveString(script, scriptfile.getAbsolutePath());
+			}
+		}
+
+		return jobs.toArray(new Job[] {});
+	}
+
+	private static Job[] createJobsFromLine(String line) throws Exception {
+		if(line.startsWith("renderSharedFS"))
+			return createSharedFSJobsFromLine(line);
+		if(line.startsWith("renderOMERO"))
+			return createOMEROJobsFromLine(line);
+		return null;
 	}
 
 	private void startConsumerThread() {
@@ -300,12 +392,12 @@ public class Animation3DServer implements PlugIn {
 //							stderr = new PrintStream(new FileOutputStream(currentJob.basename + ".stderr.txt"));
 //							System.setOut(stdout);
 //							System.setErr(stderr);
+							Animation3DHelper helper = getHelper(currentJob);
 							helper.setImage(currentJob);
 							System.out.println("  consumer: Rendering new job");
 							helper.render();
 							System.out.println("  consumer: Rendered new job");
-							if(currentJob.createAttachments)
-								helper.createAttachment(currentJob);
+							helper.uploadResults(currentJob);
 							helper.saveJobInfo(currentJob);
 							currentJob.setState(animation3d.server.State.FINISHED);
 							System.out.println("  consumer: Finished");
@@ -360,7 +452,7 @@ public class Animation3DServer implements PlugIn {
 		if(currentJob != null && currentJob.basename.equals(basename)) {
 			String state = currentJob.state.toString();
 			int position = 0;
-			double progress = helper.getProgress();
+			double progress = getHelper(currentJob).getProgress();
 			return position + " " + progress + " " + state;
 		}
 		int idx = 1; // start with 1 because currentJob is index 0
@@ -386,7 +478,7 @@ public class Animation3DServer implements PlugIn {
 		if(job != null) {
 			buf.append(job.basename).append(":")
 					.append(job.state.toString()).append(":")
-					.append(helper.getProgress()).append(";");
+					.append(getHelper(currentJob).getProgress()).append(";");
 			if(job.basename.equals(basename))
 				indexOfBasename = idx;
 			idx++;
@@ -476,7 +568,7 @@ public class Animation3DServer implements PlugIn {
 	public synchronized void cancel(String... basenames) {
 		for(String basename : basenames) {
 			if(currentJob != null && currentJob.basename.equals(basename)) {
-				helper.cancel();
+				getHelper(currentJob).cancel();
 				synchronized(currentJob) {
 					try {
 						currentJob.wait();

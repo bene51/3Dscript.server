@@ -64,6 +64,54 @@ public class Animation3DClient implements PlugIn {
 		}
 	}
 
+	// renderSharedFS <urlencode(script)> user[@domain] urlencode(password) url:series,url:series <width> <height> [frames=framerange] [uploadResults=false]
+	// where url = smb://romulus.oice.uni-erlangen.de/users/bschmid/cell.lif
+	// where series = 1-3+5-7+8+10
+	public static String[] startRendering(
+			String userAtDomain,
+			String password,
+			String urlsAndSeries,
+			String script, String frameRange,
+			int tgtWidth, int tgtHeight,
+			String processingHost, int processingPort) {
+		Socket socket;
+		try {
+			socket = new Socket(processingHost, processingPort);
+		} catch (UnknownHostException e) {
+			throw new RuntimeException("Cannot start rendering", e);
+		} catch (IOException e) {
+			throw new RuntimeException("Cannot start rendering", e);
+		}
+
+		try {
+			PrintStream out = new PrintStream(socket.getOutputStream());
+			BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+			String command =
+					"renderSharedFS " + new String(Base64.getUrlEncoder().encode(script.getBytes())) + " " +
+							userAtDomain + " " +
+							new String(Base64.getUrlEncoder().encode(password.getBytes())) + " " +
+							urlsAndSeries + " " +
+							tgtWidth + " " +
+							tgtHeight;
+			if(frameRange != null)
+				command = command + " frames=" + frameRange;
+
+			out.println(command);
+			System.out.println(command);
+			String[] basenames = in.readLine().split("\\+");
+			return basenames;
+		} catch(Exception e) {
+			throw new RuntimeException("Cannot start rendering", e);
+		} finally {
+			try {
+				socket.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
 	public static String[] startRendering(
 			String omeroHost,
 			String session,
@@ -92,7 +140,7 @@ public class Animation3DClient implements PlugIn {
 				imString.append("+").append(imageId[i]);
 
 			String command =
-					"render " + omeroHost + " " +
+					"renderOMERO " + omeroHost + " " +
 							session + " " +
 							new String(Base64.getUrlEncoder().encode(script.getBytes())) + " " +
 							imString.toString() + " " +

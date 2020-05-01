@@ -1,5 +1,8 @@
 package animation3d.server;
 
+import java.awt.Button;
+import java.awt.Choice;
+import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -26,12 +29,35 @@ import ij.gui.GenericDialog;
 import ij.plugin.AVI_Reader;
 import ij.plugin.PlugIn;
 import ij.process.ImageProcessor;
+import jcifs.CIFSContext;
+import jcifs.context.SingletonContext;
+import jcifs.smb.NtlmPasswordAuthenticator;
+import jcifs.smb.SmbFile;
+import jcifs.smb.SmbFileOutputStream;
 
 public class Animation3D_Client implements PlugIn {
 
 	public static void main(String[] args) {
 		new ij.ImageJ();
 		new Animation3D_Client().run(null);
+		// testSamba();
+	}
+
+	public static void testSamba() {
+		String url = "smb://romulus.oice.uni-erlangen.de/users/bschmid/test.txt";
+		CIFSContext base = SingletonContext.getInstance();
+		String password = "";
+		CIFSContext authed1 = base.withCredentials(new NtlmPasswordAuthenticator("OICEAD", "bschmid", password));
+		try {
+			SmbFile f = new SmbFile(url, authed1);
+			SmbFileOutputStream fos = new SmbFileOutputStream(f);
+			fos.write("Hi there".getBytes());
+			fos.close();
+			f.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
 	}
 
 	@Override
@@ -67,21 +93,28 @@ public class Animation3D_Client implements PlugIn {
 		return ret;
 	}
 
+	private String omeroHost;
+	private String omeroUser;
+	private String omeroImageId;
+	private String omeroPassword;
+
+	private String cifsUserAtDomain;
+	private String cifsUrlAndSeries;
+	private String cifsPassword;
+
 	public void test() throws UnknownHostException, IOException {
-		String omeroHost = Prefs.get("Animation3DClient.omeroHost", "");
-		String omeroUser = Prefs.get("Animation3DClient.omeroUser", "");
-		String omeroImageId = Prefs.get("Animation3DClient.omeroImageId", "");
+		omeroHost = Prefs.get("Animation3DClient.omeroHost", "");
+		omeroUser = Prefs.get("Animation3DClient.omeroUser", "");
+		omeroImageId = Prefs.get("Animation3DClient.omeroImageId", "");
 		String animationScript = Prefs.get("Animation3DClient.animationScript", "");
+		cifsUserAtDomain = Prefs.get("Animation3DClient.cifsUserAtDomain", "");
+		cifsUrlAndSeries = Prefs.get("Animation3DClient.cifsUrlAndSeries", "");
 		int targetWidth = Prefs.getInt("Animation3DClient.targetWidth", 800);
 		int targetHeight = Prefs.getInt("Animation3DClient.targetHeight", 600);
 
 
 		GenericDialogPlus gd = new GenericDialogPlus("Animation3DClient");
-		gd.addStringField("OMERO_Host", omeroHost, 30);
-		gd.addStringField("OMERO_User", omeroUser, 30);
-		gd.setEchoChar('*');
-		gd.addStringField("OMERO_Password", "", 30);
-		gd.addStringField("OMERO_Image_ID", omeroImageId);
+		addChoiceFieldWithConfigure(gd, "Image_source", new String[] {"OMERO", "Shared file system"}, "OMERO");
 		gd.addNumericField("Target_Width", targetWidth, 0);
 		gd.addNumericField("Target_Height", targetHeight, 0);
 		gd.addFileField("Animation_Script", animationScript, 30);
@@ -97,10 +130,8 @@ public class Animation3D_Client implements PlugIn {
 		if(gd.wasCanceled())
 			return;
 
-		omeroHost = gd.getNextString();
-		omeroUser = gd.getNextString();
-		String omeroPass = gd.getNextString();
-		omeroImageId = gd.getNextString();
+		final int choiceIndex = gd.getNextChoiceIndex();
+
 		targetWidth = (int)gd.getNextNumber();
 		targetHeight = (int)gd.getNextNumber();
 		animationScript = gd.getNextString();
@@ -108,6 +139,8 @@ public class Animation3D_Client implements PlugIn {
 		Prefs.set("Animation3DClient.omeroHost", omeroHost);
 		Prefs.set("Animation3DClient.omeroUser", omeroUser);
 		Prefs.set("Animation3DClient.omeroImageId", omeroImageId);
+		Prefs.set("Animation3DClient.cifsUserAtDomain", cifsUserAtDomain);
+		Prefs.set("Animation3DClient.cifsUrlAndSeries", cifsUrlAndSeries);
 		Prefs.set("Animation3DClient.targetWidth", targetWidth);
 		Prefs.set("Animation3DClient.targetHeight", targetHeight);
 		Prefs.set("Animation3DClient.animationScript", animationScript);
@@ -132,7 +165,9 @@ public class Animation3D_Client implements PlugIn {
 
 		int[] imageIds = indicesForRange(omeroImageId);
 
-		final String session = Animation3DClient.omeroLogin(omeroHost, 4064, omeroUser, omeroPass);
+		final String session = choiceIndex == 0 ?
+			Animation3DClient.omeroLogin(omeroHost, 4064, omeroUser, omeroPassword) :
+			null;
 
 		final int nPartitions = partitions.length;
 		// NOTE: there might be less partitions than processing machines
@@ -171,7 +206,6 @@ public class Animation3D_Client implements PlugIn {
 			final String processingHost = processingMachines.get(i);
 			final int processingPort = 3333;
 			final ProgressBar progressbar = progresses[i];
-			final String omeroH = omeroHost;
 			final int[] iIds = imageIds;
 			final int tgtW = targetWidth;
 			final int tgtH = targetHeight;
@@ -179,10 +213,20 @@ public class Animation3D_Client implements PlugIn {
 			exec.submit(new Runnable() {
 				@Override
 				public void run() {
-					String[] basenames = Animation3DClient.startRendering(
-							omeroH, session, iIds, script, ScriptAnalyzer.partitionToString(partition),
-							tgtW, tgtH,
-							processingHost, processingPort, null);
+					String[] basenames = null;
+					switch(choiceIndex) {
+					case 0: basenames = Animation3DClient.startRendering(
+								omeroHost, session, iIds, script, ScriptAnalyzer.partitionToString(partition),
+								tgtW, tgtH,
+								processingHost, processingPort, null);
+								break;
+					case 1: basenames = Animation3DClient.startRendering(
+								cifsUserAtDomain, cifsPassword, cifsUrlAndSeries, script,
+								ScriptAnalyzer.partitionToString(partition),
+								tgtW, tgtH,
+								processingHost, processingPort);
+								break;
+					}
 					IJ.log("basename = " + Arrays.toString(basenames));
 					outer:
 					for(int b = 0; b < basenames.length; b++) {
@@ -252,5 +296,53 @@ public class Animation3D_Client implements PlugIn {
 			ImagePlus result = new ImagePlus("output", stack);
 			result.show();
 		}
+	}
+
+	private void addChoiceFieldWithConfigure(GenericDialogPlus gd, String label, String[] choices, String defaultChoice) {
+		gd.addChoice(label, choices, defaultChoice);
+
+		final Choice ch = (Choice)gd.getChoices().lastElement();
+		GridBagLayout layout = (GridBagLayout)gd.getLayout();
+		GridBagConstraints constraints = layout.getConstraints(ch);
+
+		Button button = new Button("Configure");
+		button.addActionListener(e -> {
+			if(ch.getSelectedIndex() == 0) { // OMERO
+				GenericDialog gd2 = new GenericDialog("Configure");
+				gd2.addStringField("OMERO_Server", omeroHost, 30);
+				gd2.addStringField("OMERO_User", omeroUser, 30);
+				gd2.setEchoChar('*');
+				gd2.addStringField("OMERO_Password", omeroPassword, 30);
+				gd2.addStringField("OMERO_Image_ID", omeroImageId);
+				gd2.showDialog();
+				if(gd2.wasCanceled())
+					return;
+				omeroHost = gd2.getNextString();
+				omeroUser = gd2.getNextString();
+				omeroPassword = gd2.getNextString();
+				omeroImageId = gd2.getNextString();
+			}
+			else { // Shared file system
+				GenericDialogPlus gd2 = new GenericDialogPlus("Configure");
+				gd2.addStringField("Remote_URL_and_series", cifsUrlAndSeries, 30);
+				gd2.addStringField("User (user@domain)", cifsUserAtDomain, 30);
+				gd2.setEchoChar('*');
+				gd2.addStringField("Password", cifsPassword, 30);
+				gd2.showDialog();
+				if(gd2.wasCanceled())
+					return;
+				cifsUrlAndSeries = gd2.getNextString();
+				cifsUserAtDomain = gd2.getNextString();
+				cifsPassword = gd2.getNextString();
+			}
+		});
+
+		Panel panel = new Panel();
+		panel.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 0));
+		panel.add(ch);
+		panel.add(button);
+
+		layout.setConstraints(panel, constraints);
+		gd.add(panel);
 	}
 }

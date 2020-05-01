@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 
-public class Job {
+public abstract class Job {
 
 	public static enum Type {
 		IMAGE("image"),
@@ -23,53 +23,38 @@ public class Job {
 		}
 	}
 
-	final int imageID;
-
 	final int w, h;
 
-	final String host, sessionID, basename;
+	final String basename;
 
 	final int[] frames;
 
 	State state;
 
-	int videoAnnotationId = -1;
-	int imageAnnotationId = -1;
-
-	final boolean createAttachments;
+	final boolean uploadResults;
 
 	Type type = Type.VIDEO;
 
-	public Job(String host,
-			String sessionID,
-			String basename,
-			int imageID,
+	public Job(String basename,
 			int w,
 			int h,
 			int[] frames,
-			boolean createAttachments) {
-		this.host = host;
-		this.sessionID = sessionID;
+			boolean uploadResults) {
 		this.basename = basename;
-		this.imageID = imageID;
 		this.w = w;
 		this.h = h;
 		this.frames = frames;
-		this.createAttachments = createAttachments;
+		this.uploadResults = uploadResults;
 	}
 
 	@Override
 	public String toString() {
 		return  "{\n" +
-			"	imageID: " + imageID + ",\n" +
 			"	width: " + w + ",\n" +
 			"	height: " + h + ",\n" +
-			"	host: " + host + ",\n" +
 			"	basename: " + basename + ",\n" +
 			"	frames: " + (frames == null ? "all" : ScriptAnalyzer.partitionToString(frames)) + ",\n" +
 			"	state: " + state + ",\n" +
-			"	videoAnnotationId: " + videoAnnotationId + ",\n" +
-			"	imageAnnotationId: " + imageAnnotationId + ",\n" +
 			"	type: " + type.getType() + ",\n" +
 			"}\n";
 	}
