@@ -109,8 +109,8 @@ public class Animation3D_Client implements PlugIn {
 		String animationScript = Prefs.get("Animation3DClient.animationScript", "");
 		cifsUserAtDomain = Prefs.get("Animation3DClient.cifsUserAtDomain", "");
 		cifsUrlAndSeries = Prefs.get("Animation3DClient.cifsUrlAndSeries", "");
-		int targetWidth = Prefs.getInt("Animation3DClient.targetWidth", 800);
-		int targetHeight = Prefs.getInt("Animation3DClient.targetHeight", 600);
+		int targetWidth = (int)Prefs.get("Animation3DClient.targetWidth", 800);
+		int targetHeight = (int)Prefs.get("Animation3DClient.targetHeight", 600);
 
 
 		GenericDialogPlus gd = new GenericDialogPlus("Animation3DClient");
