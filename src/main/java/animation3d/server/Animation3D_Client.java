@@ -208,8 +208,9 @@ public class Animation3D_Client implements PlugIn {
 		}
 		progressGD.addPanel(p);
 		progressGD.setModal(false);
+		progressGD.hideCancelButton();
 		progressGD.showDialog();
-		progressGD.getButtons()[1].setVisible(false);
+		// progressGD.getButtons()[1].setVisible(false);
 
 		ExecutorService exec = Executors.newFixedThreadPool(nPartitions);
 		int nFrames = 0;
