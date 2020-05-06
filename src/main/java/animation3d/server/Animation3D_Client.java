@@ -327,7 +327,7 @@ public class Animation3D_Client implements PlugIn {
 				gd2.addStringField("Remote_URL_and_series", cifsUrlAndSeries, 30);
 				gd2.addStringField("User (user@domain)", cifsUserAtDomain, 30);
 				gd2.setEchoChar('*');
-				gd2.addStringField("Password", cifsPassword, 30);
+				gd2.addStringField("Share_Password", cifsPassword, 30);
 				gd2.showDialog();
 				if(gd2.wasCanceled())
 					return;
