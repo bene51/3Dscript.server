@@ -1,5 +1,10 @@
 package animation3d.server;
 
+import java.awt.Color;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -17,19 +22,24 @@ import java.net.SocketTimeoutException;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 
+import fiji.util.gui.GenericDialogPlus;
 import ij.IJ;
+import ij.Prefs;
 import ij.plugin.PlugIn;
 
 public class Animation3DServer implements PlugIn {
 
 	public static void main(String[] args) {
+		new ij.ImageJ();
 		Animation3DServer server = new Animation3DServer();
 		server.start();
 	}
@@ -74,6 +84,84 @@ public class Animation3DServer implements PlugIn {
 
 	private MulticastReceiver multicastReceiver;
 
+	public String run(String[] cmd) {
+		StringBuffer output = new StringBuffer();
+		try {
+			System.out.println(Arrays.toString(cmd));
+			Process p = Runtime.getRuntime().exec(cmd);
+			BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()));
+			String line;
+			while ((line = in.readLine()) != null)
+				output.append(line).append('\n');
+
+			p.waitFor(3, TimeUnit.MINUTES);
+			return output.toString();
+		} catch (IOException | InterruptedException e) {
+			throw new RuntimeException("Cannot run " + Arrays.toString(cmd), e);
+		}
+	}
+
+	public void showNonmodalDialog() {
+		GenericDialogPlus gd = new GenericDialogPlus("3Dscript.server");
+		gd.setOKLabel("Shutdown");
+		gd.addMessage("Server is running...", gd.getFont(), Color.GREEN.darker());
+		if(IJ.isWindows()) {
+			gd.addMessage("Configure TaskScheduler to automatically start\n3Dscript.server after booting.");
+			gd.addButton("Install", new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					try {
+						String fijidir = Prefs.getImageJDir();
+						String taskXMLString = getTaskSchedulerText(fijidir);
+						String tmpPath = File.createTempFile("3Dscript_task", ".xml").getAbsolutePath();
+						IJ.saveString(taskXMLString, tmpPath);
+						String batchfile = File.createTempFile("3Dscript_task", ".bat").getAbsolutePath();
+						String command = "SCHTASKS /Create /TN \\3Dscript /F /XML \"" + tmpPath + "\"";
+						IJ.saveString(batFileContent + command, batchfile);
+						String output = run(new String[] {batchfile});
+						System.out.println("Batchfile: " + batchfile);
+						IJ.log(output);
+					} catch(Exception ex) {
+						throw new RuntimeException("Cannot configure TaskScheduler for 3Dscript.server", ex);
+					}
+				}
+			});
+			gd.addMessage("Remove 3Dscript.server from the TaskScheduler.");
+			gd.addButton("Uninstall", new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					try {
+						String batchfile = File.createTempFile("3Dscript_task", ".bat").getAbsolutePath();
+						String command = "SCHTASKS /Delete /F /TN \\3Dscript";
+						IJ.saveString(batFileContent + command, batchfile);
+						String output = run(new String[] {batchfile});
+						System.out.println("Batchfile: " + batchfile);
+						IJ.log(output);
+					} catch(Exception ex) {
+						throw new RuntimeException("Cannot configure TaskScheduler for 3Dscript.server", ex);
+					}
+				}
+			});
+		}
+		gd.hideCancelButton();
+		gd.setModal(false);
+		gd.addWindowListener(new WindowListener() {
+
+			@Override public void windowClosed(WindowEvent arg0) {
+				shutdown();
+				System.out.println("Closing");
+			}
+
+			@Override public void windowActivated(WindowEvent arg0) {}
+			@Override public void windowClosing(WindowEvent arg0) {}
+			@Override public void windowDeactivated(WindowEvent arg0) {}
+			@Override public void windowDeiconified(WindowEvent arg0) {}
+			@Override public void windowIconified(WindowEvent arg0) {}
+			@Override public void windowOpened(WindowEvent arg0) {}
+		});
+		gd.showDialog();
+	}
+
 	public void start() {
 		startConsumerThread();
 
@@ -89,6 +177,9 @@ public class Animation3DServer implements PlugIn {
 			IJ.handleException(e);
 			return;
 		}
+
+		showNonmodalDialog();
+
 		System.out.println("Waiting for connection...");
 		while(!shutdown.get()) {
 			Socket socket = null;
@@ -588,4 +679,94 @@ public class Animation3DServer implements PlugIn {
 			});
 		}
 	}
+
+	private String getTaskSchedulerText(String fijidir) {
+		return
+"<?xml version=\"1.0\" encoding=\"UTF-16\"?>\n" +
+"<Task version=\"1.2\" xmlns=\"http://schemas.microsoft.com/windows/2004/02/mit/task\">\n" +
+"  <RegistrationInfo>\n" +
+"    <Date>2020-01-30T14:36:41.0902839</Date>\n" +
+"    <Author>3Dscript</Author>\n" +
+"    <URI>\\Test</URI>\n" +
+"  </RegistrationInfo>\n" +
+"  <Triggers>\n" +
+"    <BootTrigger>\n" +
+"      <Enabled>true</Enabled>\n" +
+"    </BootTrigger>\n" +
+"  </Triggers>\n" +
+"  <Principals>\n" +
+"    <Principal id=\"Author\">\n" +
+"      <UserId>S-1-5-18</UserId>\n" +
+"      <RunLevel>LeastPrivilege</RunLevel>\n" +
+"    </Principal>\n" +
+"  </Principals>\n" +
+"  <Settings>\n" +
+"    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>\n" +
+"    <DisallowStartIfOnBatteries>true</DisallowStartIfOnBatteries>\n" +
+"    <StopIfGoingOnBatteries>true</StopIfGoingOnBatteries>\n" +
+"    <AllowHardTerminate>true</AllowHardTerminate>\n" +
+"    <StartWhenAvailable>false</StartWhenAvailable>\n" +
+"    <RunOnlyIfNetworkAvailable>false</RunOnlyIfNetworkAvailable>\n" +
+"    <IdleSettings>\n" +
+"      <StopOnIdleEnd>true</StopOnIdleEnd>\n" +
+"      <RestartOnIdle>false</RestartOnIdle>\n" +
+"    </IdleSettings>\n" +
+"    <AllowStartOnDemand>true</AllowStartOnDemand>\n" +
+"    <Enabled>true</Enabled>\n" +
+"    <Hidden>false</Hidden>\n" +
+"    <RunOnlyIfIdle>false</RunOnlyIfIdle>\n" +
+"    <WakeToRun>false</WakeToRun>\n" +
+"    <ExecutionTimeLimit>PT0S</ExecutionTimeLimit>\n" +
+"    <Priority>7</Priority>\n" +
+"    <RestartOnFailure>\n" +
+"      <Interval>PT1M</Interval>\n" +
+"      <Count>3</Count>\n" +
+"    </RestartOnFailure>\n" +
+"  </Settings>\n" +
+"  <Actions Context=\"Author\">\n" +
+"    <Exec>\n" +
+"      <Command>" + fijidir + "\\ImageJ-win64.exe</Command>\n" +
+"      <Arguments>--console --headless -eval \"run(\\\"3Dscript Server\\\", \\\"\\\");\" &gt; bla.txt 2&gt;&amp;1</Arguments>\n" +
+"      <WorkingDirectory>" + fijidir + "</WorkingDirectory>\n" +
+"    </Exec>\n" +
+"  </Actions>\n" +
+"</Task>\n";
+	}
+
+	private static final String batFileContent =
+"@echo off\n" +
+"\n" +
+"REM Copied from https://gist.github.com/Bomret/0a130778ffbe3a3f0322\n" +
+"\n" +
+"REM credits: https://sites.google.com/site/eneerge/scripts/batchgotadmin\n" +
+"REM Stored here in case that site goes down some day\n" +
+":: BatchGotAdmin\n" +
+":-------------------------------------\n" +
+"REM  --> Check for permissions\n" +
+">nul 2>&1 \"%SYSTEMROOT%\\system32\\cacls.exe\" \"%SYSTEMROOT%\\system32\\config\\system\"\n" +
+"\n" +
+"REM --> If error flag set, we do not have admin.\n" +
+"if '%errorlevel%' NEQ '0' (\n" +
+"    echo Requesting administrative privileges...\n" +
+"    goto UACPrompt\n" +
+") else ( goto gotAdmin )\n" +
+"\n" +
+":UACPrompt\n" +
+"    echo Set UAC = CreateObject^(\"Shell.Application\"^) > \"%temp%\\getadmin.vbs\"\n" +
+"    set params = %*:\"=\"\"\n" +
+"    echo UAC.ShellExecute \"cmd.exe\", \"/c %~s0 %params% > \"\"%temp%\\getadmin.log\"\"\", \"\", \"runas\", 1 >> \"%temp%\\getadmin.vbs\"\n" +
+"\n" +
+"    \"%temp%\\getadmin.vbs\"\n" +
+"    :: del \"%temp%\\getadmin.vbs\"\n" +
+"    waitfor SomethingThatIsNeverHappening /t 3 2>NUL\n" +
+"    for /f \"tokens=*\" %%i in (%temp%\\getadmin.log) do @echo %%i\n" +
+"    exit /B\n" +
+"\n" +
+":gotAdmin\n" +
+"    pushd \"%CD%\"\n" +
+"    CD /D \"%~dp0\"\n" +
+":--------------------------------------\n" +
+":: <YOUR BATCH SCRIPT HERE>\n";
+
+
 }
