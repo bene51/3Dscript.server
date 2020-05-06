@@ -111,10 +111,13 @@ public class Animation3D_Client implements PlugIn {
 		cifsUrlAndSeries = Prefs.get("Animation3DClient.cifsUrlAndSeries", "");
 		int targetWidth = (int)Prefs.get("Animation3DClient.targetWidth", 800);
 		int targetHeight = (int)Prefs.get("Animation3DClient.targetHeight", 600);
+		String dataSource = Prefs.get("Animation3DClient.imageSource", "Shared file system");
 
 
 		GenericDialogPlus gd = new GenericDialogPlus("Animation3DClient");
-		addChoiceFieldWithConfigure(gd, "Image_source", new String[] {"OMERO", "Shared file system"}, "OMERO");
+		if(!dataSource.equals("OMERO") && !dataSource.equals("Shared file system"))
+			dataSource = "Shared file system";
+		addChoiceFieldWithConfigure(gd, "Image_source", new String[] {"OMERO", "Shared file system"}, dataSource);
 		gd.addNumericField("Target_Width", targetWidth, 0);
 		gd.addNumericField("Target_Height", targetHeight, 0);
 		gd.addFileField("Animation_Script", animationScript, 30);
@@ -144,6 +147,7 @@ public class Animation3D_Client implements PlugIn {
 		Prefs.set("Animation3DClient.targetWidth", targetWidth);
 		Prefs.set("Animation3DClient.targetHeight", targetHeight);
 		Prefs.set("Animation3DClient.animationScript", animationScript);
+		Prefs.set("Animation3DClient.imageSource", dataSource);
 		Prefs.savePreferences();
 
 		System.out.println("Processing on ...");
