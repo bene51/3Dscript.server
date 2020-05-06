@@ -117,7 +117,8 @@ public class Animation3D_Client implements PlugIn {
 		GenericDialogPlus gd = new GenericDialogPlus("Animation3DClient");
 		if(!dataSource.equals("OMERO") && !dataSource.equals("Shared file system"))
 			dataSource = "Shared file system";
-		addChoiceFieldWithConfigure(gd, "Image_source", new String[] {"OMERO", "Shared file system"}, dataSource);
+		String[] dataSourceChoice = new String[] {"OMERO", "Shared file system"};
+		addChoiceFieldWithConfigure(gd, "Image_source", dataSourceChoice, dataSource);
 		gd.addNumericField("Target_Width", targetWidth, 0);
 		gd.addNumericField("Target_Height", targetHeight, 0);
 		gd.addFileField("Animation_Script", animationScript, 30);
@@ -134,6 +135,7 @@ public class Animation3D_Client implements PlugIn {
 			return;
 
 		final int choiceIndex = gd.getNextChoiceIndex();
+		dataSource = dataSourceChoice[choiceIndex];
 
 		targetWidth = (int)gd.getNextNumber();
 		targetHeight = (int)gd.getNextNumber();
