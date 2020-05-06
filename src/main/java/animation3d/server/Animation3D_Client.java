@@ -24,6 +24,7 @@ import fiji.util.gui.GenericDialogPlus;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
+import ij.Macro;
 import ij.Prefs;
 import ij.gui.GenericDialog;
 import ij.plugin.AVI_Reader;
@@ -131,6 +132,13 @@ public class Animation3D_Client implements PlugIn {
 			}
 		});
 		gd.showDialog();
+		if(Macro.getOptions() != null) {
+			ProcessOnDialog pod = new ProcessOnDialog();
+			pod.run("");
+			processingMachines = pod.getMachines();
+			configureOMERO();
+			configureSharedFS();
+		}
 		if(gd.wasCanceled())
 			return;
 
@@ -229,6 +237,7 @@ public class Animation3D_Client implements PlugIn {
 			exec.submit(new Runnable() {
 				@Override
 				public void run() {
+					IJ.log("Running on " + processingHost);
 					String[] basenames = null;
 					switch(choiceIndex) {
 					case 0: basenames = Animation3DClient.startRendering(
@@ -324,6 +333,36 @@ public class Animation3D_Client implements PlugIn {
 		return gd.getNextString();
 	}
 
+	private void configureOMERO() {
+		GenericDialog gd = new GenericDialog("Configure");
+		gd.addStringField("OMERO_Server", omeroHost, 30);
+		gd.addStringField("OMERO_User", omeroUser, 30);
+		gd.setEchoChar('*');
+		gd.addStringField("OMERO_Password", omeroPassword, 30);
+		gd.addStringField("OMERO_Image_ID", omeroImageId);
+		gd.showDialog();
+		if(gd.wasCanceled())
+			return;
+		omeroHost = gd.getNextString();
+		omeroUser = gd.getNextString();
+		omeroPassword = gd.getNextString();
+		omeroImageId = gd.getNextString();
+	}
+
+	private void configureSharedFS() {
+		GenericDialogPlus gd = new GenericDialogPlus("Configure");
+		gd.addStringField("Remote_URL_and_series", cifsUrlAndSeries, 30);
+		gd.addStringField("User (user@domain)", cifsUserAtDomain, 30);
+		gd.setEchoChar('*');
+		gd.addStringField("Share_Password", cifsPassword, 30);
+		gd.showDialog();
+		if(gd.wasCanceled())
+			return;
+		cifsUrlAndSeries = gd.getNextString();
+		cifsUserAtDomain = gd.getNextString();
+		cifsPassword = gd.getNextString();
+	}
+
 	private void addChoiceFieldWithConfigure(GenericDialogPlus gd, String label, String[] choices, String defaultChoice) {
 		gd.addChoice(label, choices, defaultChoice);
 
@@ -333,34 +372,10 @@ public class Animation3D_Client implements PlugIn {
 
 		Button button = new Button("Configure");
 		button.addActionListener(e -> {
-			if(ch.getSelectedIndex() == 0) { // OMERO
-				GenericDialog gd2 = new GenericDialog("Configure");
-				gd2.addStringField("OMERO_Server", omeroHost, 30);
-				gd2.addStringField("OMERO_User", omeroUser, 30);
-				gd2.setEchoChar('*');
-				gd2.addStringField("OMERO_Password", omeroPassword, 30);
-				gd2.addStringField("OMERO_Image_ID", omeroImageId);
-				gd2.showDialog();
-				if(gd2.wasCanceled())
-					return;
-				omeroHost = gd2.getNextString();
-				omeroUser = gd2.getNextString();
-				omeroPassword = gd2.getNextString();
-				omeroImageId = gd2.getNextString();
-			}
-			else { // Shared file system
-				GenericDialogPlus gd2 = new GenericDialogPlus("Configure");
-				gd2.addStringField("Remote_URL_and_series", cifsUrlAndSeries, 30);
-				gd2.addStringField("User (user@domain)", cifsUserAtDomain, 30);
-				gd2.setEchoChar('*');
-				gd2.addStringField("Share_Password", cifsPassword, 30);
-				gd2.showDialog();
-				if(gd2.wasCanceled())
-					return;
-				cifsUrlAndSeries = gd2.getNextString();
-				cifsUserAtDomain = gd2.getNextString();
-				cifsPassword = gd2.getNextString();
-			}
+			if(ch.getSelectedIndex() == 0) // OMERO
+				configureOMERO();
+			else // Shared file system
+				configureSharedFS();
 		});
 
 		Panel panel = new Panel();
