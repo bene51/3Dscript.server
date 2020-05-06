@@ -150,6 +150,15 @@ public class Animation3D_Client implements PlugIn {
 		Prefs.set("Animation3DClient.imageSource", dataSource);
 		Prefs.savePreferences();
 
+		if(choiceIndex == 0 && omeroPassword == null) {
+			if((omeroPassword = getPassword("OMERO_Password")).isEmpty())
+				return;
+		}
+		else if(choiceIndex == 1 && cifsPassword == null) {
+			if((cifsPassword = getPassword("Share_Password")).isEmpty())
+				return;
+		}
+
 		System.out.println("Processing on ...");
 		for(String m : processingMachines)
 			System.out.println(" - " + m);
@@ -300,6 +309,16 @@ public class Animation3D_Client implements PlugIn {
 			ImagePlus result = new ImagePlus("output", stack);
 			result.show();
 		}
+	}
+
+	private static String getPassword(String prompt) {
+		GenericDialog gd = new GenericDialog("Enter password");
+		gd.setEchoChar('*');
+		gd.addStringField(prompt, "", 20);
+		gd.showDialog();
+		if (gd.wasCanceled())
+			return "";
+		return gd.getNextString();
 	}
 
 	private void addChoiceFieldWithConfigure(GenericDialogPlus gd, String label, String[] choices, String defaultChoice) {
