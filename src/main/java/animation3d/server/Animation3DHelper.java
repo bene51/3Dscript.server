@@ -15,8 +15,6 @@ public abstract class Animation3DHelper {
 
 	protected Renderer3D renderer;
 
-	protected ImagePlus image;
-
 	protected Job job;
 
 	protected Animator animator;
@@ -85,10 +83,6 @@ public abstract class Animation3DHelper {
 		} catch(IOException | InterruptedException e) {
 			throw new RuntimeException("Cannot convert to MP4", e);
 		}
-	}
-
-	public ImagePlus getImage() {
-		return image;
 	}
 
 	/**

@@ -5,6 +5,7 @@ import java.io.File;
 import animation3d.renderer3d.OpenCLRaycaster;
 import animation3d.renderer3d.Renderer3D;
 import animation3d.textanim.Animator;
+import ij.ImagePlus;
 
 public class SharedFSHelper extends Animation3DHelper {
 
@@ -25,6 +26,8 @@ public class SharedFSHelper extends Animation3DHelper {
 				cifsConnection.close();
 			cifsConnection = new CIFSConnection(j.domain, j.username, j.password);
 		}
+
+		ImagePlus image = renderer == null ? null : renderer.getImage();
 
 		String title = j.remoteBasename;
 		if(image != null && image.getTitle().equals(title)) {

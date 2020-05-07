@@ -60,6 +60,8 @@ public class OMEROHelper extends Animation3DHelper {
 			omeroConnection = new OMEROConnection(j.host, j.sessionID, null);
 		}
 
+		ImagePlus image = renderer == null ? null : renderer.getImage();
+
 		if(image != null && image.getTitle().equals(Integer.toString(j.imageID))) {
 			j.setState(State.OPENED);
 			return;
@@ -121,6 +123,8 @@ public class OMEROHelper extends Animation3DHelper {
 	public void setImageOld(OMEROJob j) {
 		this.cancel = false;
 		this.job = j;
+
+		ImagePlus image = renderer == null ? null : renderer.getImage();
 
 		if(image != null && image.getTitle().equals(Integer.toString(j.imageID))) {
 			j.setState(State.OPENED);
