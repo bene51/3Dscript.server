@@ -98,7 +98,7 @@ public class Animation3DClient implements PlugIn {
 				command = command + " frames=" + frameRange;
 
 			out.println(command);
-			System.out.println(command);
+			IJ.log(command);
 			String[] basenames = in.readLine().split("\\+");
 			return basenames;
 		} catch(Exception e) {
@@ -151,7 +151,7 @@ public class Animation3DClient implements PlugIn {
 			if(basenames != null)
 				command = command + " basenames=" + String.join("+", basenames);
 			out.println(command);
-			System.out.println(command);
+			IJ.log(command);
 			basenames = in.readLine().split("\\+");
 			return basenames;
 		} catch(Exception e) {
