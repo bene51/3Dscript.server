@@ -31,6 +31,11 @@ public class ProcessOnDialog {
 		new ProcessOnDialog().run("");
 	}
 
+	public void addMachines(Iterable<String> machines) {
+		for(String machine : machines)
+			this.machines.add(machine);
+	}
+
 	public List<String> findServers() throws IOException {
 		byte[] buf = MulticastReceiver.DISCOVERY_3DSCRIPT_REQUEST.getBytes();
 		InetAddress group = InetAddress.getByName(MulticastReceiver.DISCOVERY_GROUP);
@@ -133,8 +138,10 @@ public class ProcessOnDialog {
 		grid.setConstraints(gd.getMessage(), c);
 
 		if(!macro) {
-			lastUsedMachineIdx++;
-			addMachine(gd, "Machine_" + lastUsedMachineIdx, "localhost");
+			for(String machine : machines) {
+				lastUsedMachineIdx++;
+				addMachine(gd, "Machine_" + lastUsedMachineIdx, machine);
+			}
 		} else {
 			for(String l : machineLabels) {
 				addMachine(gd, l, Macro.getValue(macroOptions, l, "localhost"));

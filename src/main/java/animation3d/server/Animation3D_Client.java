@@ -72,7 +72,7 @@ public class Animation3D_Client implements PlugIn {
 		}
 	}
 
-	List<String> processingMachines = Arrays.asList(new String[] {"localhost"});
+	private List<String> processingMachines = new ArrayList<String>();
 
 	private static int[] indicesForRange(String range) {
 		ArrayList<Integer> indices = new ArrayList<Integer>();
@@ -113,6 +113,8 @@ public class Animation3D_Client implements PlugIn {
 		int targetWidth = (int)Prefs.get("Animation3DClient.targetWidth", 800);
 		int targetHeight = (int)Prefs.get("Animation3DClient.targetHeight", 600);
 		String dataSource = Prefs.get("Animation3DClient.imageSource", "Shared file system");
+		String processingMachinesString = Prefs.get("Animation3DClient.processingServers", "");
+		processingMachines = Arrays.asList(processingMachinesString.split(","));
 
 
 		GenericDialogPlus gd = new GenericDialogPlus("Animation3DClient");
@@ -127,6 +129,7 @@ public class Animation3D_Client implements PlugIn {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				ProcessOnDialog pod = new ProcessOnDialog();
+				pod.addMachines(processingMachines);
 				pod.run("");
 				processingMachines = pod.getMachines();
 			}
@@ -158,6 +161,7 @@ public class Animation3D_Client implements PlugIn {
 		Prefs.set("Animation3DClient.targetHeight", targetHeight);
 		Prefs.set("Animation3DClient.animationScript", animationScript);
 		Prefs.set("Animation3DClient.imageSource", dataSource);
+		Prefs.set("Animation3DClient.processingServers", String.join(",", processingMachines));
 		Prefs.savePreferences();
 
 		if(choiceIndex == 0 && omeroPassword == null) {
@@ -237,7 +241,6 @@ public class Animation3D_Client implements PlugIn {
 			exec.submit(new Runnable() {
 				@Override
 				public void run() {
-					IJ.log("Running on " + processingHost);
 					String[] basenames = null;
 					switch(choiceIndex) {
 					case 0: basenames = Animation3DClient.startRendering(
@@ -252,7 +255,6 @@ public class Animation3D_Client implements PlugIn {
 								processingHost, processingPort);
 								break;
 					}
-					IJ.log("basename = " + Arrays.toString(basenames));
 					outer:
 					for(int b = 0; b < basenames.length; b++) {
 						String basename = basenames[b];
