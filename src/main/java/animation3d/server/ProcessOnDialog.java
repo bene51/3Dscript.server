@@ -157,8 +157,11 @@ public class ProcessOnDialog {
 
 		machines.clear();
 
-		for(int i = 0; i < nMachines; i++)
-			machines.add(gd.getNextString());
+		for(int i = 0; i < nMachines; i++) {
+			String m = gd.getNextString();
+			if(!m.trim().isEmpty())
+				machines.add(m);
+		}
 	}
 
 	private List<String> machines = new ArrayList<String>();

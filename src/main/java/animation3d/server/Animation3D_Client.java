@@ -164,6 +164,11 @@ public class Animation3D_Client implements PlugIn {
 		Prefs.set("Animation3DClient.processingServers", String.join(",", processingMachines));
 		Prefs.savePreferences();
 
+		if(processingMachines.isEmpty()) {
+			IJ.error("No processing servers configured");
+			return;
+		}
+
 		if(choiceIndex == 0 && omeroPassword == null) {
 			if((omeroPassword = getPassword("OMERO_Password")).isEmpty())
 				return;
