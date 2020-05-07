@@ -115,12 +115,15 @@ public class ProcessOnDialog {
 							System.out.println(stringFields);
 							List<String> servers = findServers();
 							moveButtonsDown(gd);
+							if(servers.size() > 0)
+								removeEmptyMachines(gd);
 							for (String server : servers) {
 								if (!contains(stringFields, server)) {
 									lastUsedMachineIdx++;
 									addMachine(gd, "Machine_" + lastUsedMachineIdx, server);
 								}
 							}
+
 							gd.pack();
 						} catch (IOException e1) {
 							// TODO Auto-generated catch block
@@ -192,6 +195,30 @@ public class ProcessOnDialog {
 		GridBagConstraints c = layout.getConstraints(buttons);
 		c.gridy += 100;
 		layout.setConstraints(buttons, c);
+	}
+
+	private void removeEmptyMachines(GenericDialogPlus gd) {
+		ArrayList<Integer> indicesToRemove = new ArrayList<Integer>();
+		for(int i = 0; i < gd.getComponentCount(); i++) {
+			Component c = gd.getComponent(i);
+			if(c instanceof Panel) {
+				Panel p = (Panel)c;
+				if(p.getName().startsWith("Machine")) {
+					TextField tf = (TextField)p.getComponent(0);
+					if(tf.getText().trim().isEmpty()) {
+						indicesToRemove.add(i);
+						gd.getStringFields().remove(tf);
+					}
+				}
+			}
+		}
+		for(int i = indicesToRemove.size() - 1; i >= 0; i--) {
+			int idx = indicesToRemove.get(i);
+			gd.remove(idx); // the panel
+			gd.remove(idx - 1); // the label
+		}
+
+		gd.pack();
 	}
 
 	private int lastUsedMachineIdx = 0;
