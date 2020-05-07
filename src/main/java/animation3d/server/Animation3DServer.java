@@ -47,11 +47,7 @@ public class Animation3DServer implements PlugIn {
 	// render <host> <sessionid> <script> <imageid> <target width> <target height> frames=<frames>
 	public static void oneTimeRender(String line) throws Exception {
 		Job[] jobs = createJobsFromLine(line);
-		Animation3DHelper helper = null;
-		if(line.startsWith("renderOMERO"))
-			helper = new OMEROHelper();
-		else if(line.startsWith("renderSharedFS"))
-			helper = new SharedFSHelper();
+		Animation3DHelper helper = new Animation3DHelper();
 		for(Job job : jobs) {
 			helper.setImage(job);
 			helper.render();
@@ -325,18 +321,9 @@ public class Animation3DServer implements PlugIn {
 		return ret;
 	}
 
-	private Animation3DHelper omeroHelper = new OMEROHelper();
-	private Animation3DHelper sharedFSHelper = new SharedFSHelper();
+	private Animation3DHelper helper = new Animation3DHelper();
 
 	private Job currentJob = null;
-
-	private Animation3DHelper getHelper(Job job) {
-		if(job instanceof OMEROJob)
-			return omeroHelper;
-		if(job instanceof SharedFSJob)
-			return sharedFSHelper;
-		return null;
-	}
 
 	// render <host> <session> <urlencode(script)> <imageId1+imageId2+...> <width> <height> [frames=framerange] [basenames=basename1+basename2+...] [createAttachments=true|false]
 	private static Job[] createOMEROJobsFromLine(String line) throws Exception {
@@ -483,7 +470,6 @@ public class Animation3DServer implements PlugIn {
 //							stderr = new PrintStream(new FileOutputStream(currentJob.basename + ".stderr.txt"));
 //							System.setOut(stdout);
 //							System.setErr(stderr);
-							Animation3DHelper helper = getHelper(currentJob);
 							helper.setImage(currentJob);
 							System.out.println("  consumer: Rendering new job");
 							helper.render();
@@ -543,7 +529,7 @@ public class Animation3DServer implements PlugIn {
 		if(currentJob != null && currentJob.basename.equals(basename)) {
 			String state = currentJob.state.toString();
 			int position = 0;
-			double progress = getHelper(currentJob).getProgress();
+			double progress = helper.getProgress();
 			return position + " " + progress + " " + state;
 		}
 		int idx = 1; // start with 1 because currentJob is index 0
@@ -569,7 +555,7 @@ public class Animation3DServer implements PlugIn {
 		if(job != null) {
 			buf.append(job.basename).append(":")
 					.append(job.state.toString()).append(":")
-					.append(getHelper(currentJob).getProgress()).append(";");
+					.append(helper.getProgress()).append(";");
 			if(job.basename.equals(basename))
 				indexOfBasename = idx;
 			idx++;
@@ -659,7 +645,7 @@ public class Animation3DServer implements PlugIn {
 	public synchronized void cancel(String... basenames) {
 		for(String basename : basenames) {
 			if(currentJob != null && currentJob.basename.equals(basename)) {
-				getHelper(currentJob).cancel();
+				helper.cancel();
 				synchronized(currentJob) {
 					try {
 						currentJob.wait();

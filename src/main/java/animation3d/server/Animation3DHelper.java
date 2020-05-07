@@ -1,25 +1,30 @@
 package animation3d.server;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.concurrent.TimeUnit;
 
+import animation3d.renderer3d.OpenCLRaycaster;
 import animation3d.renderer3d.Renderer3D;
 import animation3d.textanim.Animator;
 import ij.IJ;
 import ij.ImagePlus;
 
-public abstract class Animation3DHelper {
+public class Animation3DHelper {
 
-	protected Renderer3D renderer;
+	private Renderer3D renderer;
 
-	protected Job job;
+	private Job job;
 
-	protected Animator animator;
+	private Animator animator;
 
-	protected boolean cancel = false;
+	private boolean cancel = false;
+
+	private OMEROConnection omeroConnection = null;
+	private CIFSConnection cifsConnection = null;
 
 	public Animation3DHelper() {
 	}
@@ -30,9 +35,92 @@ public abstract class Animation3DHelper {
 			animator.cancelRendering();
 	}
 
-	public abstract void setImage(Job j);
+	private Connection getConnection(Job job) {
+		if(job instanceof OMEROJob)
+			return omeroConnection;
+		else if(job instanceof SharedFSJob)
+			return cifsConnection;
+		return null;
+	}
 
-	public abstract void uploadResults(Job j);
+	private Connection newConnection(Job job) {
+		if(job instanceof OMEROJob) {
+			this.omeroConnection = new OMEROConnection((OMEROJob)job);
+			return this.omeroConnection;
+		}
+		else if(job instanceof SharedFSJob) {
+			this.cifsConnection = new CIFSConnection((SharedFSJob)job);
+			return this.cifsConnection;
+		}
+		return null;
+	}
+
+	public void setImage(Job j) {
+		this.cancel = false;
+		this.job = j;
+
+		Connection connection = getConnection(j);
+		if(connection == null || !connection.checkSession(j)) {
+			if(connection != null)
+				connection.close();
+		}
+		connection = newConnection(j);
+
+		ImagePlus image = renderer == null ? null : renderer.getImage();
+
+		String title = connection.getImageTitle(j);
+		if(image != null && image.getTitle().equals(title)) {
+			j.setState(State.OPENED);
+			return;
+		}
+
+		if(image != null) {
+			image.close();
+			OpenCLRaycaster.close();
+		}
+
+		j.setState(State.OPENING);
+
+		if(cancel)
+			return;
+
+		image = connection.createImage(j);
+		if(image == null)
+			throw new RuntimeException("Unable to open image from source:\n" + j);
+
+		image.setTitle(title);
+
+		if(cancel)
+			return;
+
+		renderer = new Renderer3D(image, image.getWidth(), image.getHeight());
+		animator = new Animator(renderer);
+
+		j.setState(State.OPENED);
+	}
+
+	public void uploadResults(Job j) {
+		if(!j.uploadResults)
+			return;
+
+		if(cancel)
+			return;
+
+		j.setState(State.ATTACHING);
+		Connection connection = getConnection(j);
+
+		File file = new File(j.basename + ".mp4");
+		Job.Type type = Job.Type.IMAGE;
+		if(file.exists()) {
+			type = Job.Type.VIDEO;
+			connection.uploadVideo(j, file);
+		}
+		file = new File(j.basename + ".png");
+		if(file.exists()) {
+			connection.uploadStill(j, file);
+		}
+		j.type = type;
+	}
 
 	public void saveJobInfo(Job j) {
 		IJ.saveString(j.toString(), j.basename + ".info");

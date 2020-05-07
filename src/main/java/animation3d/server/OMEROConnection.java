@@ -36,11 +36,17 @@ import omero.model.OriginalFile;
 import omero.model.OriginalFileI;
 import omero.model.enums.ChecksumAlgorithmSHA1160;
 
-public class OMEROConnection implements AutoCloseable {
+public class OMEROConnection implements Connection, AutoCloseable {
+
+	public static final String NAME_SPACE_TO_SET = "oice/3Dscript";
 
 	private Gateway gateway = null;
 
-	public OMEROConnection(String host, String username, String password) {
+	public OMEROConnection(OMEROJob job) {
+		this(job.host, job.sessionID, null);
+	}
+
+	private OMEROConnection(String host, String username, String password) {
 		gateway = new Gateway(new SimpleLogger());
 		// TODO check out which logging options
 		LoginCredentials cred = new LoginCredentials(username, password, host, 4064);
@@ -60,6 +66,13 @@ public class OMEROConnection implements AutoCloseable {
 		}
 	}
 
+	@Override
+	public boolean checkSession(Job job) {
+		if(!(job instanceof OMEROJob))
+			throw new RuntimeException("Did not get OMEROJob");
+		return checkSession(((OMEROJob)job).sessionID);
+	}
+
 	public boolean checkSession(String sessionId) {
 		try {
 			return gateway.getSessionId(gateway.getLoggedInUser()).equals(sessionId);
@@ -74,7 +87,19 @@ public class OMEROConnection implements AutoCloseable {
 			gateway.disconnect();
 	}
 
-	public static final String NAME_SPACE_TO_SET = "oice/3Dscript";
+	@Override
+	public String getImageTitle(Job job) {
+		if(!(job instanceof OMEROJob))
+			throw new RuntimeException("Did not get OMEROJob");
+		return Integer.toString(((OMEROJob)job).imageID);
+	}
+
+	@Override
+	public ImagePlus createImage(Job j) {
+		if(!(j instanceof OMEROJob))
+			throw new RuntimeException("Did not get OMEROJob");
+		return createImage(((OMEROJob)j).imageID);
+	}
 
 	public ImagePlus createImage(int imageID) {
 
@@ -165,6 +190,22 @@ public class OMEROConnection implements AutoCloseable {
 			ci.setChannelLut(lut, c + 1);
 		}
 		return ci;
+	}
+
+	@Override
+	public void uploadStill(Job job, File f) {
+		if(!(job instanceof OMEROJob))
+			throw new RuntimeException("Did not get OMEROJob");
+		OMEROJob j = (OMEROJob)job;
+		j.imageAnnotationId = createAttachment(j.imageID, f);
+	}
+
+	@Override
+	public void uploadVideo(Job job, File f) {
+		if(!(job instanceof OMEROJob))
+			throw new RuntimeException("Did not get OMEROJob");
+		OMEROJob j = (OMEROJob)job;
+		j.videoAnnotationId = createAttachment(j.imageID, f);
 	}
 
 	public int createAttachment(int imageID, File file) {

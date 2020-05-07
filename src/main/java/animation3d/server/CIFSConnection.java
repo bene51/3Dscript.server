@@ -1,6 +1,7 @@
 package animation3d.server;
 
 import java.io.BufferedInputStream;
+import java.io.File;
 import java.io.FileInputStream;
 
 import ij.ImagePlus;
@@ -15,15 +16,26 @@ import loci.common.Location;
 import loci.plugins.BF;
 import loci.plugins.in.ImporterOptions;
 
-public class CIFSConnection implements AutoCloseable {
+public class CIFSConnection implements Connection, AutoCloseable {
 
 	private CIFSContext ctx;
+
+	public CIFSConnection(SharedFSJob job) {
+		this(job.domain, job.username, job.password);
+	}
 
 	public CIFSConnection(String domain, String username, String password) {
 		ctx = SingletonContext.getInstance().withCredentials(new NtlmPasswordAuthenticator(domain, username, password));
 	}
 
-	public boolean checkUsername(String username) {
+	@Override
+	public boolean checkSession(Job job) {
+		if(!(job instanceof SharedFSJob))
+			throw new RuntimeException("Did not get SharedFSJob");
+		return checkUsername(((SharedFSJob)job).username);
+	}
+
+	private boolean checkUsername(String username) {
 		return ((NtlmPasswordAuthenticator)ctx.getCredentials()).getUsername().equals(username);
 	}
 
@@ -34,6 +46,21 @@ public class CIFSConnection implements AutoCloseable {
 		} catch (CIFSException e) {
 			throw new RuntimeException("Cannot close CIFSConnection", e);
 		}
+	}
+
+	@Override
+	public String getImageTitle(Job j) {
+		if(!(j instanceof SharedFSJob))
+			throw new RuntimeException("Did not get SharedFSJob");
+		return ((SharedFSJob)j).remoteBasename;
+	}
+
+	@Override
+	public ImagePlus createImage(Job j) {
+		if(!(j instanceof SharedFSJob))
+			throw new RuntimeException("Did not get SharedFSJob");
+		SharedFSJob fs = (SharedFSJob)j;
+		return createImage(fs.url, fs.series);
 	}
 
 	// http://imagej.1557.x6.nabble.com/creating-an-ImagePlus-from-an-InputStream-or-a-byte-td3697788.html
@@ -66,6 +93,23 @@ public class CIFSConnection implements AutoCloseable {
 		} catch(Exception e) {
 			throw new RuntimeException("Cannot upload file " + localfile + " to " + targetURL);
 		}
+	}
+
+	@Override
+	public void uploadStill(Job j, File f) {
+		if(!(j instanceof SharedFSJob))
+			throw new RuntimeException("Did not get SharedFSJob");
+		SharedFSJob fs = (SharedFSJob)j;
+		uploadFile(f.getAbsolutePath(), fs.remoteBasename + ".png");
+	}
+
+	@Override
+	public void uploadVideo(Job j, File f) {
+		if(!(j instanceof SharedFSJob))
+			throw new RuntimeException("Did not get SharedFSJob");
+		SharedFSJob fs = (SharedFSJob)j;
+		uploadFile(f.getAbsolutePath(), fs.remoteBasename + ".mp4");
+
 	}
 
 	public static void main(String[] args) {
