@@ -420,8 +420,15 @@ public class Animation3DServer implements PlugIn {
 		String[] ptoks = urlsAndSeries.split(",");
 		for(String ptok : ptoks) {
 			int colon = ptok.indexOf('|');
-			String url = ptok.substring(0, colon);
-			int[] series = parsePlusMinusRange(ptok.substring(colon + 1));
+			String url;
+			int[] series;
+			if(colon > -1) {
+				url = ptok.substring(0, colon);
+				series = parsePlusMinusRange(ptok.substring(colon + 1));
+			} else { // no series given, assume 0
+				url = ptok;
+				series = new int[] {0};
+			}
 			for(int s : series) {
 				String basename = Files.createTempDirectory("3DScript").toFile().getAbsolutePath() + File.separator + new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss").format(new Date());
 				Job j = new SharedFSJob(domain, username, password, url, s, basename, w, h, frames, uploadResults);
