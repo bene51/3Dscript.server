@@ -51,15 +51,15 @@ public class ProcessOnDialog {
 
 		buf = MulticastReceiver.DISCOVERY_3DSCRIPT_RESPONSE.getBytes();
 		DatagramPacket toReceive = new DatagramPacket(buf, buf.length);
-		socket.setSoTimeout(500);
+		socket.setSoTimeout(200);
 		long millis = System.currentTimeMillis();
 		ArrayList<String> servers = new ArrayList<String>();
 		while(true) {
 			int dt = (int)(System.currentTimeMillis() - millis);
-			if(dt > 5000)
+			if(dt > 2000)
 				break;
-			IJ.showStatus("Server discovery " + (100 * dt / 5000) + "%");
-			IJ.showProgress(dt, 5000);
+			IJ.showStatus("Server discovery " + (100 * dt / 2000) + "%");
+			IJ.showProgress(dt, 2000);
 			try {
 				socket.receive(toReceive);
 				String msg = new String(toReceive.getData()).trim();
