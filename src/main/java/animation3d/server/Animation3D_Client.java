@@ -358,7 +358,13 @@ public class Animation3D_Client implements PlugIn {
 
 	private void configureSharedFS() {
 		GenericDialogPlus gd = new GenericDialogPlus("Configure");
-		gd.addStringField("Remote_URL_and_series", cifsUrlAndSeries, 30);
+		gd.addMessage(
+				"Please enter in the form:\n" +
+				"url1|series1, url2|series2, etc.\n" +
+				"where\n" +
+				"url is written like smb://<host>/path and\n" +
+				"series is, e.g., 1-3+5+7 (for rendering series 1, 2, 3, 5, 7)");
+		gd.addStringField("URL_and_series", cifsUrlAndSeries, 30);
 		gd.addStringField("User (user@domain)", cifsUserAtDomain, 30);
 		gd.setEchoChar('*');
 		gd.addStringField("Share_Password", cifsPassword, 30);
