@@ -12,6 +12,7 @@ import animation3d.renderer3d.Renderer3D;
 import animation3d.textanim.Animator;
 import ij.IJ;
 import ij.ImagePlus;
+import ij.measure.Calibration;
 
 public class Animation3DHelper {
 
@@ -89,6 +90,43 @@ public class Animation3DHelper {
 			throw new RuntimeException("Unable to open image from source:\n" + j);
 
 		image.setTitle(title);
+
+		// check whether the image needs to be resized
+		// it should be resized, if either
+		// - image width > 2 * target width or
+		// - image height > 2 * target height
+		//
+		// in z, it should b resized if the pixel depth of the resized image is better then the pixel width/height
+		// we average an integer number of planes, and we use so many planes that the pixel depth is just equal or
+		// worse than pixel width
+
+		Calibration cal = image.getCalibration();
+		double pw = cal.pixelWidth;
+		double pd = cal.pixelDepth;
+		int tgtW = image.getWidth();
+		int tgtH = image.getHeight();
+		double scaleX = 2.0 * j.w / tgtW;
+		double scaleY = 2.0 * j.h / tgtH;
+		double scale = 1;
+		if(scaleX < 1 || scaleY < 1) {
+			scale = Math.min(scaleX, scaleY);
+			tgtW = (int)Math.round(scale * tgtW);
+			tgtH = (int)Math.round(scale * tgtH);
+			pw /= scale;
+		}
+
+		// assume pw = 2, pd = 0.6, then
+		// to get isotropic resolution, we would take n = pw / pd = 2 / 0.6 = 3.33 planes, so just worse means 4 planes
+		int nPlanesToAverage = (int)Math.ceil(pw / pd);
+
+		if(nPlanesToAverage > 1 || scale < 1) {
+			ResizedVirtualStack stack = new ResizedVirtualStack(
+					tgtW, tgtH, nPlanesToAverage,
+					image.getNSlices(), image.getNChannels(), image.getStack());
+			image.setStack(stack, image.getNChannels(), stack.getNPlanes(), image.getNFrames());
+			cal.pixelWidth = cal.pixelHeight = pw;
+			cal.pixelDepth *= nPlanesToAverage;
+		}
 
 		if(cancel)
 			return;
