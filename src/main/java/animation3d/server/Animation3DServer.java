@@ -1,6 +1,7 @@
 package animation3d.server;
 
 import java.awt.Color;
+import java.awt.GraphicsEnvironment;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
@@ -97,7 +98,13 @@ public class Animation3DServer implements PlugIn {
 		}
 	}
 
+	private static boolean isHeadless() {
+		return GraphicsEnvironment.isHeadless();
+	}
+
 	public void showNonmodalDialog() {
+		if(isHeadless())
+			return;
 		GenericDialogPlus gd = new GenericDialogPlus("3Dscript.server");
 		gd.setOKLabel("Shutdown");
 		gd.addMessage("Server is running...", gd.getFont(), Color.GREEN.darker());
