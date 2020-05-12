@@ -333,11 +333,20 @@ public class Animation3DServer implements PlugIn {
 	private Job currentJob = null;
 
 	// render <host> <session> <urlencode(script)> <imageId1+imageId2+...> <width> <height> [frames=framerange] [basenames=basename1+basename2+...] [createAttachments=true|false]
+	// session can be replaced with user/base64(password)
 	private static Job[] createOMEROJobsFromLine(String line) throws Exception {
 		String[] toks = line.split(" ");
 		String host = toks[1];
 		String sessionid = toks[2];
 		String script = new String(Base64.getUrlDecoder().decode(toks[3]));
+		String username = null, password = null;
+
+		int slash = sessionid.indexOf('/');
+		if(slash >= 0) {
+			username = sessionid.substring(0, slash);
+			password = new String(Base64.getUrlDecoder().decode(sessionid.substring(slash + 1)));
+			sessionid = null;
+		}
 
 		String imageidString = toks[4];
 		int w = Integer.parseInt(toks[5]);
@@ -378,13 +387,22 @@ public class Animation3DServer implements PlugIn {
 			File scriptfile = new File(basename + ".animation.txt");
 			IJ.saveString(script, scriptfile.getAbsolutePath());
 
-			Job job = new OMEROJob(host,
-					sessionid,
-					basename,
-					imageid,
-					w, h,
-					frames,
-					createAttachments);
+			Job job = sessionid != null ?
+					new OMEROJob(host,
+						sessionid,
+						basename,
+						imageid,
+						w, h,
+						frames,
+						createAttachments) :
+					new OMEROJob(host,
+							username,
+							password,
+							basename,
+							imageid,
+							w, h,
+							frames,
+							createAttachments);
 			jobs[i] = job;
 		}
 		return jobs;

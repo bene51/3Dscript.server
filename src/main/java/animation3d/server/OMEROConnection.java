@@ -43,13 +43,23 @@ public class OMEROConnection implements Connection, AutoCloseable {
 	private Gateway gateway = null;
 
 	public OMEROConnection(OMEROJob job) {
-		this(job.host, job.sessionID, null);
+		this(makeCredentials(job));
+		try {
+			job.setSessionID(gateway.getSessionId(gateway.getLoggedInUser()));
+		} catch (DSOutOfServiceException e) {
+			throw new RuntimeException("Cannot save session id", e);
+		}
 	}
 
-	private OMEROConnection(String host, String username, String password) {
+	private static LoginCredentials makeCredentials(OMEROJob job) {
+		if(job.getSessionID() != null)
+			return new LoginCredentials(job.getSessionID(), null, job.host, 4064);
+		else
+			return new LoginCredentials(job.username, job.password, job.host, 4064);
+	}
+
+	private OMEROConnection(LoginCredentials cred) {
 		gateway = new Gateway(new SimpleLogger());
-		// TODO check out which logging options
-		LoginCredentials cred = new LoginCredentials(username, password, host, 4064);
 
 		try {
 			// TODO are the following lines needed?
@@ -70,7 +80,7 @@ public class OMEROConnection implements Connection, AutoCloseable {
 	public boolean checkSession(Job job) {
 		if(!(job instanceof OMEROJob))
 			throw new RuntimeException("Did not get OMEROJob");
-		return checkSession(((OMEROJob)job).sessionID);
+		return checkSession(((OMEROJob)job).getSessionID());
 	}
 
 	public boolean checkSession(String sessionId) {
@@ -341,7 +351,7 @@ public class OMEROConnection implements Connection, AutoCloseable {
 		new ij.ImageJ();
 		// createImage(host, user,  pass, 201660).show();
 		try(
-			OMEROConnection vi = new OMEROConnection(host, user, pass);
+			OMEROConnection vi = new OMEROConnection(new LoginCredentials(user, pass, host));
 		) {
 			vi.createAttachment(201660, new File("D:/flybrain.rgb.ffmpeg.mp4"));
 		}
