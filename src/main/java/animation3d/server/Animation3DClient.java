@@ -47,6 +47,12 @@ public class Animation3DClient implements PlugIn {
 			session = gateway.getSessionId(user);
 		} catch (DSOutOfServiceException e) {
 			e.printStackTrace();
+		} finally {
+			try {
+				gateway.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
         long end = System.currentTimeMillis();
         System.out.println("omero login took "  + (end - start) + " ms");
