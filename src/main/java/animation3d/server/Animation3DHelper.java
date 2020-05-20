@@ -72,6 +72,7 @@ public class Animation3DHelper {
 		String title = connection.getImageTitle(j);
 		if(image != null && image.getTitle().equals(title)) {
 			j.setState(State.OPENED);
+			renderer.reset();
 			return;
 		}
 
