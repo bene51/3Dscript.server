@@ -105,7 +105,8 @@ public class ResizedVirtualStack extends ImageStack {
 		if( n < 1 || n > N)
 			throw new IllegalArgumentException("Argument out of range: "+n);
 
-		int originalPlane = (((n - 1) / nChannelsOriginal) % nPlanesOriginal) + 1;
+		int plane = (((n - 1) / nChannelsOriginal) % nTargetPlanes) + 1;
+		int originalPlane = (plane - 1) * nTargetPlanesPerZ + 1;
 
 		ImageProcessor ip = original.getProcessor(originalPlane);
 		ImageProcessor averaged = ip.convertToFloat();

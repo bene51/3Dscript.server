@@ -117,7 +117,8 @@ public class Animation3DHelper {
 
 		// assume pw = 2, pd = 0.6, then
 		// to get isotropic resolution, we would take n = pw / pd = 2 / 0.6 = 3.33 planes, so just worse means 4 planes
-		int nPlanesToAverage = (int)Math.ceil(pw / pd);
+		// - 0.1: to avoid rounding errors, e.g. pw = 1.500001, pd = 1.5
+		int nPlanesToAverage = (int)Math.ceil(pw / pd - 0.1);
 
 		if(nPlanesToAverage > 1 || scale < 1) {
 			ResizedVirtualStack stack = new ResizedVirtualStack(
