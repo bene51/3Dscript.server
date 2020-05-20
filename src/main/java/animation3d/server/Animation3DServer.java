@@ -235,6 +235,7 @@ public class Animation3DServer implements PlugIn {
 				}
 				// cancel <basename>
 				else if(line.startsWith("cancel")) {
+					log(line);
 					String rem = line.substring(line.indexOf(' ')).trim();
 					String[] basenames = rem.split(" ");
 					cancel(basenames);
@@ -693,7 +694,6 @@ public class Animation3DServer implements PlugIn {
 						e.printStackTrace();
 					}
 				}
-				return;
 			}
 
 			queue.removeIf(new Predicate<Job>() {
