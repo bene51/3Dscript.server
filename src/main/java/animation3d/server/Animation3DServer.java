@@ -165,6 +165,10 @@ public class Animation3DServer implements PlugIn {
 		gd.showDialog();
 	}
 
+	private void log(String s) {
+		IJ.log(s);
+	}
+
 	public void start() {
 		startConsumerThread();
 
@@ -183,6 +187,7 @@ public class Animation3DServer implements PlugIn {
 
 		showNonmodalDialog();
 
+		log("Server is up and ready...");
 		System.out.println("Waiting for connection...");
 		while(!shutdown.get()) {
 			Socket socket = null;
@@ -203,6 +208,7 @@ public class Animation3DServer implements PlugIn {
 				}
 				// render <host> <sessionid> <script> <imageid> <target width> <target height> frames=<frames>
 				else if(line.startsWith("render")) {
+					log(line);
 					// TODO check how many jobs in queue, if more than X, reject and tell cient to come back later
 					try {
 						Job[] jobs = createJobsFromLine(line);
@@ -305,7 +311,7 @@ public class Animation3DServer implements PlugIn {
 			}
 		}
 		System.out.println("Server shut down");
-		System.exit(0);
+		log("Server shut down");
 	}
 
 	private static int[] parsePlusMinusRange(String s) {
@@ -538,6 +544,7 @@ public class Animation3DServer implements PlugIn {
 								currentJob.notifyAll();
 							}
 							System.out.println("now currentJob is really done");
+							log("  - " + currentJob.basename + " has finised");
 						}
 					}
 				}
