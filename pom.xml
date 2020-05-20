@@ -85,8 +85,9 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>omero</groupId>
-			<artifactId>blitz</artifactId>
+			<groupId>org.openmicroscopy</groupId>
+			<artifactId>omero-gateway</artifactId>
+			<version>5.6.2</version>
 		</dependency>
 		<dependency>
 			<groupId>ome</groupId>
