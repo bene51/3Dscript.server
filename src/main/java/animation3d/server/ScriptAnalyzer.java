@@ -189,7 +189,7 @@ public class ScriptAnalyzer {
 	}
 
 	private static final ExtendedRenderingState getDefaultRenderingState() {
-		final int nC = 1;
+		final int nC = 100;
 		float[] pdIn = new float[] { 1, 1, 1 };
 		float[] p = new float[] {1, 1, 1};
 
@@ -198,6 +198,7 @@ public class ScriptAnalyzer {
 		float[] rotcenter = new float[] { 100, 100, 100 };
 
 		RenderingSettings[] renderingSettings = new RenderingSettings[nC];
+		Color[] channelColors = new Color[nC];
 		for(int c = 0; c < nC; c++) {
 			renderingSettings[c] = new RenderingSettings(
 					0, 255, 1,
@@ -206,6 +207,7 @@ public class ScriptAnalyzer {
 					0, 0, 0,
 					200, 200, 200,
 					near, far);
+			channelColors[c] = Color.WHITE;
 		}
 
 		CombinedTransform transformation = new CombinedTransform(pdIn, p, rotcenter);
@@ -213,7 +215,7 @@ public class ScriptAnalyzer {
 		ExtendedRenderingState rs = new ExtendedRenderingState(0,
 				1,
 				renderingSettings,
-				new Color[] {Color.WHITE},
+				channelColors,
 				Color.BLACK,
 				RenderingAlgorithm.INDEPENDENT_TRANSPARENCY,
 				transformation);
