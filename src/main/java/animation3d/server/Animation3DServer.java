@@ -273,6 +273,13 @@ public class Animation3DServer implements PlugIn {
 					out.println(new String(Base64.getUrlEncoder().encode(st.getBytes())));
 					out.close();
 				}
+				else if(line.startsWith("getavisize")) {
+					String basename = line.substring(line.indexOf(' ')).trim();
+					long size = getAVISize(basename);
+					PrintStream out = new PrintStream(socket.getOutputStream());
+					out.println(Long.toString(size));
+					out.close();
+				}
 				else if(line.startsWith("downloadavi")) {
 					String basename = line.substring(line.indexOf(' ')).trim();
 					sendAVI(socket, basename);
@@ -620,6 +627,13 @@ public class Animation3DServer implements PlugIn {
 			sendFile(socket, basename, f);
 			return;
 		}
+	}
+
+	public long getAVISize(String basename) {
+		File f = new File(basename + ".avi");
+		if(!f.exists())
+			return 0;
+		return f.length();
 	}
 
 	public String getTypeAndAttachmentId(String basename) {

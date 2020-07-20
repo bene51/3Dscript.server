@@ -13,6 +13,7 @@ import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Base64;
 
+import animation3d.renderer3d.Progress;
 import fiji.util.gui.GenericDialogPlus;
 import ij.IJ;
 import ij.Prefs;
@@ -228,7 +229,39 @@ public class Animation3DClient implements PlugIn {
 		}
 	}
 
+	public static long getAVISize(String processingHost, int processingPort, String basename) {
+		Socket socket;
+		try {
+			socket = new Socket(processingHost, processingPort);
+		} catch (UnknownHostException e) {
+			throw new RuntimeException("Cannot get stacktrace", e);
+		} catch (IOException e) {
+			throw new RuntimeException("Cannot get stacktrace", e);
+		}
+
+		try {
+			PrintStream out = new PrintStream(socket.getOutputStream());
+			BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+			out.println("getavisize " + basename);
+			String line = in.readLine();
+			return Long.parseLong(line);
+		} catch(Exception e) {
+			throw new RuntimeException("Cannot start rendering", e);
+		} finally {
+			try {
+				socket.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
 	public static File downloadAVI(String processingHost, int processingPort, String basename) {
+		return downloadAVI(processingHost, processingPort, basename, null, 0);
+	}
+
+	public static File downloadAVI(String processingHost, int processingPort, String basename, Progress progress, long expectedSize) {
 		Socket socket;
 		try {
 			socket = new Socket(processingHost, processingPort);
@@ -247,18 +280,20 @@ public class Animation3DClient implements PlugIn {
 			out.println("downloadavi " + basename);
 
 			File f = File.createTempFile(basename, ".avi");
-			long fSize = f.length();
 			System.out.println("Animation3DClient: download result to " + f.getAbsolutePath());
 			outStream = new BufferedOutputStream(new FileOutputStream(f));
 
 			final byte[] buffer = new byte[4096];
 
 			long total = 0;
+			int c = 0;
 			for (int read = inStream.read(buffer); read >= 0; read = inStream.read(buffer)) {
 		        outStream.write(buffer, 0, read);
 		        total += read;
-		        System.out.println("Animation3DClient: downloaded "  + total + " bytes out of " + fSize);
+		        if(progress != null && c++ % 100 == 0)
+		        	progress.setProgress((double)total / expectedSize);
 			}
+			progress.setProgress(1);
 			return f;
 		} catch(Exception e) {
 			throw new RuntimeException("Cannot start rendering", e);

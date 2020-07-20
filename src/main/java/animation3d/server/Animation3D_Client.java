@@ -292,7 +292,10 @@ public class Animation3D_Client implements PlugIn {
 						int nFrames = partition.length;
 						ImagePlus video = null;
 						if(nFrames > 1) {
-							File f = Animation3DClient.downloadAVI(processingHost, processingPort, basename);
+							progressbar.setState("Downloading");
+							long size = Animation3DClient.getAVISize(processingHost, processingPort, basename);
+							File f = Animation3DClient.downloadAVI(processingHost, processingPort, basename, progressbar, size);
+
 							AVI_Reader reader = new AVI_Reader();
 							reader.setVirtual(false);
 							reader.displayDialog(false);

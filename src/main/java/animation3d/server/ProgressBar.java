@@ -11,9 +11,10 @@ import java.awt.Label;
 import java.awt.Panel;
 import java.awt.RenderingHints;
 
+import animation3d.renderer3d.Progress;
 import ij.gui.GenericDialog;
 
-public class ProgressBar extends ij.gui.ProgressBar  {
+public class ProgressBar extends ij.gui.ProgressBar implements Progress {
 
 	private String state = "";
 
@@ -30,6 +31,12 @@ public class ProgressBar extends ij.gui.ProgressBar  {
 	public void show(double progress) {
 		super.show(progress);
 		repaint();
+	}
+
+	// Progress interface
+	@Override
+	public void setProgress(double progress) {
+		show(progress);
 	}
 
 	@Override
