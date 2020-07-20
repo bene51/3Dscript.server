@@ -3,11 +3,19 @@ package animation3d.server;
 import java.awt.Button;
 import java.awt.Choice;
 import java.awt.FlowLayout;
+import java.awt.GraphicsEnvironment;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.Label;
 import java.awt.Panel;
+import java.awt.TextField;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.UnsupportedFlavorException;
+import java.awt.dnd.DnDConstants;
+import java.awt.dnd.DropTarget;
+import java.awt.dnd.DropTargetAdapter;
+import java.awt.dnd.DropTargetDropEvent;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -20,6 +28,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import animation3d.renderer3d.OpenCLRaycaster;
 import fiji.util.gui.GenericDialogPlus;
 import ij.IJ;
 import ij.ImagePlus;
@@ -364,15 +373,88 @@ public class Animation3D_Client implements PlugIn {
 		omeroImageId = gd.getNextString();
 	}
 
+	private static final class CifsDropTargetAdapter extends DropTargetAdapter {
+
+		TextField text;
+		DataFlavor flavor = DataFlavor.stringFlavor;
+
+		public CifsDropTargetAdapter(TextField text) {
+			this.text = text;
+		}
+
+		@Override
+		public void drop(DropTargetDropEvent event) {
+			try {
+				String string = getString(event);
+				if(IJ.isWindows()) {
+					File f = new File(string);
+					if(f.exists()) {
+						String unc = OpenCLRaycaster.getUNCForPath(f.getAbsolutePath());
+						if(unc != null)
+							string = unc;
+					}
+				}
+				text.setText(string);
+			} catch (Exception e) { e.printStackTrace(); }
+		}
+
+		static String stripSuffix(String s, String suffix) {
+			return !s.endsWith(suffix) ? s :
+				s.substring(0, s.length() - suffix.length());
+		}
+
+		@SuppressWarnings("unchecked")
+		static String getString(DropTargetDropEvent event)
+				throws IOException, UnsupportedFlavorException {
+			String text = null;
+			DataFlavor fileList = DataFlavor.javaFileListFlavor;
+
+			if (event.isDataFlavorSupported(fileList)) {
+				event.acceptDrop(DnDConstants.ACTION_COPY);
+				List<File> list = (List<File>)event.getTransferable().getTransferData(fileList);
+				text = list.get(0).getAbsolutePath();
+			}
+			else if (event.isDataFlavorSupported(DataFlavor.stringFlavor)) {
+				event.acceptDrop(DnDConstants.ACTION_COPY);
+				text = (String)event.getTransferable()
+					.getTransferData(DataFlavor.stringFlavor);
+				if (text.startsWith("file://"))
+					text = text.substring(7);
+				text = stripSuffix(stripSuffix(text, "\n"),
+						"\r").replaceAll("%20", " ");
+			}
+			else {
+				event.rejectDrop();
+				return null;
+			}
+
+			event.dropComplete(text != null);
+			return text;
+		}
+	}
+
+	private static boolean isHeadless() {
+		return GraphicsEnvironment.isHeadless();
+	}
+
 	private void configureSharedFS() {
 		GenericDialogPlus gd = new GenericDialogPlus("Configure");
 		gd.addMessage(
-				"Please enter in the form:\n" +
-				"url1|series1, url2|series2, etc.\n" +
+				"Please enter in the form: 'url1|series, url2|series', etc.\n" +
 				"where\n" +
-				"url is written like smb://<host>/path and\n" +
-				"series is, e.g., 1-3+5+7 (for rendering series 1, 2, 3, 5, 7)");
-		gd.addStringField("URL_and_series", cifsUrlAndSeries, 30);
+				"- url is written like \n" +
+				// "    smb://<host>/path or\n" +
+				"    \\\\<host>\\path and\n" +
+				"- series is written like, e.g.,\n" +
+				"    1-3+5+7 (rendering series 1, 2, 3, 5, 7)");
+		gd.addFileField("URL_and_series", cifsUrlAndSeries, 30);
+
+		if(IJ.isWindows() && !isHeadless()) {
+			TextField text = (TextField)gd.getStringFields().lastElement();
+			text.setDropTarget(null);
+			new DropTarget(text, new CifsDropTargetAdapter(text));
+		}
+
 		gd.addStringField("User (user@domain)", cifsUserAtDomain, 30);
 		gd.setEchoChar('*');
 		gd.addStringField("Share_Password", cifsPassword, 30);
@@ -380,6 +462,12 @@ public class Animation3D_Client implements PlugIn {
 		if(gd.wasCanceled())
 			return;
 		cifsUrlAndSeries = gd.getNextString();
+		// "\\server\path" -> "smb://server/path"
+		if(cifsUrlAndSeries.startsWith("\\\\"))
+			cifsUrlAndSeries = cifsUrlAndSeries.replaceAll("\\\\", "/");
+		if(!cifsUrlAndSeries.startsWith("smb:"))
+			cifsUrlAndSeries = "smb:";
+
 		cifsUserAtDomain = gd.getNextString();
 		cifsPassword = gd.getNextString();
 	}
