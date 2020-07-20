@@ -288,20 +288,20 @@ public class Animation3DClient implements PlugIn {
 			long total = 0;
 			int c = 0;
 			for (int read = inStream.read(buffer); read >= 0; read = inStream.read(buffer)) {
-		        outStream.write(buffer, 0, read);
-		        total += read;
-		        if(progress != null && c++ % 100 == 0)
-		        	progress.setProgress((double)total / expectedSize);
+				outStream.write(buffer, 0, read);
+				total += read;
+				if (progress != null && c++ % 100 == 0)
+					progress.setProgress((double) total / expectedSize);
 			}
 			progress.setProgress(1);
 			return f;
-		} catch(Exception e) {
+		} catch (Exception e) {
 			throw new RuntimeException("Cannot start rendering", e);
 		} finally {
 			try {
-				if(inStream != null)
+				if (inStream != null)
 					inStream.close();
-				if(outStream != null)
+				if (outStream != null)
 					outStream.close();
 				socket.close();
 			} catch (IOException e) {
