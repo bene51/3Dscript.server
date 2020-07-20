@@ -8,13 +8,14 @@ import java.io.InputStreamReader;
 import java.util.concurrent.TimeUnit;
 
 import animation3d.renderer3d.OpenCLRaycaster;
+import animation3d.renderer3d.Progress;
 import animation3d.renderer3d.Renderer3D;
 import animation3d.textanim.Animator;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.measure.Calibration;
 
-public class Animation3DHelper {
+public class Animation3DHelper implements Progress {
 
 	private Renderer3D renderer;
 
@@ -23,6 +24,8 @@ public class Animation3DHelper {
 	private Animator animator;
 
 	private boolean cancel = false;
+
+	private double openingProgress = 0;
 
 	private OMEROConnection omeroConnection = null;
 	private CIFSConnection cifsConnection = null;
@@ -81,6 +84,7 @@ public class Animation3DHelper {
 			OpenCLRaycaster.close();
 		}
 
+
 		j.setState(State.OPENING);
 
 		if(cancel)
@@ -133,10 +137,16 @@ public class Animation3DHelper {
 		if(cancel)
 			return;
 
-		renderer = new Renderer3D(image, image.getWidth(), image.getHeight());
+		renderer = new Renderer3D(image, image.getWidth(), image.getHeight(), this);
 		animator = new Animator(renderer);
 
 		j.setState(State.OPENED);
+	}
+
+	// LoadingProgress interface
+	@Override
+	public void setProgress(double progress) {
+		this.openingProgress = progress;
 	}
 
 	public void uploadResults(Job j) {
@@ -249,11 +259,14 @@ public class Animation3DHelper {
 	}
 
 	public double getProgress() {
-		if(job.state != State.RENDERING)
-			return job.state.start / 100.0;
-
-		double ratio = animator.getProgress();
-		return (State.RENDERING.start + ratio * State.RENDERING.duration) / 100.0;
+		if(job.state == State.RENDERING) {
+			double ratio = animator.getProgress();
+			return (State.RENDERING.start + ratio * State.RENDERING.duration) / 100.0;
+		}
+		if(job.state == State.OPENING) {
+			return (State.OPENING.start + openingProgress * State.OPENING.duration) / 100.0;
+		}
+		return job.state.start / 100.0;
 	}
 
 	public State getState() {
