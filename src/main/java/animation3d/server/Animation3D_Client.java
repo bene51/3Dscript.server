@@ -116,7 +116,6 @@ public class Animation3D_Client implements PlugIn {
 		String processingMachinesString = Prefs.get("Animation3DClient.processingServers", "");
 		processingMachines = Arrays.asList(processingMachinesString.split(","));
 
-
 		GenericDialogPlus gd = new GenericDialogPlus("Animation3DClient");
 		if(!dataSource.equals("OMERO") && !dataSource.equals("Shared file system"))
 			dataSource = "Shared file system";
@@ -299,15 +298,18 @@ public class Animation3D_Client implements PlugIn {
 							reader.displayDialog(false);
 							reader.run(f.getAbsolutePath());
 							video = reader.getImagePlus();
-							// video.show();
+							if(nPartitions == 1)
+								video.show();
 						}
 						else {
 							File f = Animation3DClient.downloadPNG(processingHost, processingPort, basename);
 							video = IJ.openImage(f.getAbsolutePath());
-							// video.show();
+							if(nPartitions == 1)
+								video.show();
 						}
-						for(int f = 0; f < partition.length; f++)
-							rendered[b][partition[f]] = video.getStack().getProcessor(f + 1);
+						if(nPartitions > 1)
+							for(int f = 0; f < partition.length; f++)
+								rendered[b][partition[f]] = video.getStack().getProcessor(f + 1);
 					}
 				}
 			});
@@ -320,6 +322,9 @@ public class Animation3D_Client implements PlugIn {
 		}
 		long end = System.currentTimeMillis();
 		System.out.println("Rendering took " + (end - start) + " ms");
+
+		if(nPartitions == 1)
+			return;
 
 		for(int b = 0; b < imageIds.length; b++) {
 			ImageStack stack = new ImageStack(rendered[b][0].getWidth(), rendered[b][0].getHeight());
