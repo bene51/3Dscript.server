@@ -3,11 +3,13 @@ package animation3d.server;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.Label;
 import java.awt.Panel;
+import java.awt.RenderingHints;
 
 import ij.gui.GenericDialog;
 
@@ -33,9 +35,13 @@ public class ProgressBar extends ij.gui.ProgressBar  {
 	@Override
 	public void paint(Graphics g) {
 		super.paint(g);
+		Graphics2D g2d = (Graphics2D)g;
+		g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_GASP);
 		Font font = g.getFont();
 		g.setFont(new Font(font.getName(), Font.BOLD, 14));
-		g.setColor(Color.GREEN);
+		Color color = new Color(0, 0, 40);
+		g.setColor(color);
 		g.drawString(state, 5, 21);
 	}
 
@@ -51,7 +57,7 @@ public class ProgressBar extends ij.gui.ProgressBar  {
 		ProgressBar pb1 = new ProgressBar();
 		ProgressBar pb2 = new ProgressBar();
 		pb1.setState("bla bla bla");
-		pb1.show(5, 10);
+		pb1.show(0, 10);
 		pb2.setState("blubb");
 		pb2.show(7, 10);
 
