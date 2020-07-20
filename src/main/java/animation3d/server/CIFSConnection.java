@@ -3,13 +3,17 @@ package animation3d.server;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.net.MalformedURLException;
 
 import ij.ImagePlus;
 import jcifs.CIFSContext;
 import jcifs.CIFSException;
 import jcifs.context.SingletonContext;
 import jcifs.smb.NtlmPasswordAuthenticator;
+import jcifs.smb.SmbException;
 import jcifs.smb.SmbFile;
+import jcifs.smb.SmbFileInputStream;
 import jcifs.smb.SmbFileOutputStream;
 import loci.common.IRandomAccess;
 import loci.common.Location;
@@ -67,6 +71,9 @@ public class CIFSConnection implements Connection, AutoCloseable {
 	public ImagePlus createImage(String url, int series) {
 		try {
 			SmbFile smbFile = new SmbFile(url, ctx);
+			if(url.endsWith(".tif") && !url.endsWith("ome.tif")) {
+				return openVirtualTiff(smbFile);
+			}
 			IRandomAccess ira = new SmbFileHandle(smbFile, "r");
 			Location.mapFile("bla", ira);
 			ImporterOptions options = new ImporterOptions();
@@ -79,6 +86,11 @@ public class CIFSConnection implements Connection, AutoCloseable {
 			e.printStackTrace();
 			return null;
 		}
+	}
+
+	public static ImagePlus openVirtualTiff(SmbFile smbFile) throws Exception {
+		FileInfoVirtualStackFromURL furl = new FileInfoVirtualStackFromURL(smbFile);
+		return furl.open();
 	}
 
 	public void uploadFile(String localfile, String targetURL) {
