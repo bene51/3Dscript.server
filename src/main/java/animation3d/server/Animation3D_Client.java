@@ -466,7 +466,7 @@ public class Animation3D_Client implements PlugIn {
 		if(cifsUrlAndSeries.startsWith("\\\\"))
 			cifsUrlAndSeries = cifsUrlAndSeries.replaceAll("\\\\", "/");
 		if(!cifsUrlAndSeries.startsWith("smb:"))
-			cifsUrlAndSeries = "smb:";
+			cifsUrlAndSeries = "smb:" + cifsUrlAndSeries;
 
 		cifsUserAtDomain = gd.getNextString();
 		cifsPassword = gd.getNextString();
