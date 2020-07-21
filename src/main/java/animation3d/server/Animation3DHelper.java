@@ -94,6 +94,7 @@ public class Animation3DHelper implements Progress {
 		if(image == null)
 			throw new RuntimeException("Unable to open image from source:\n" + j);
 
+		// image.show();
 		image.setTitle(title);
 
 		// check whether the image needs to be resized
@@ -247,6 +248,11 @@ public class Animation3DHelper implements Progress {
 			result.getCalibration().fps = 20;
 			String outfile = job.basename + ".avi";
 			IJ.save(result, outfile);
+//			try {
+//				new AVI_Writer().writeImage(result, outfile, AVI_Writer.NO_COMPRESSION, 100);
+//			} catch(Exception e) {
+//				throw new RuntimeException("Error saving AVI", e);
+//			}
 			// save poster image
 			result.setSlice(1);
 			IJ.save(result, job.basename + ".png");
