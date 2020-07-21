@@ -39,35 +39,12 @@ import ij.gui.GenericDialog;
 import ij.plugin.AVI_Reader;
 import ij.plugin.PlugIn;
 import ij.process.ImageProcessor;
-import jcifs.CIFSContext;
-import jcifs.context.SingletonContext;
-import jcifs.smb.NtlmPasswordAuthenticator;
-import jcifs.smb.SmbFile;
-import jcifs.smb.SmbFileOutputStream;
 
 public class Animation3D_Client implements PlugIn {
 
 	public static void main(String[] args) {
 		new ij.ImageJ();
 		new Animation3D_Client().run(null);
-		// testSamba();
-	}
-
-	public static void testSamba() {
-		String url = "smb://romulus.oice.uni-erlangen.de/users/bschmid/test.txt";
-		CIFSContext base = SingletonContext.getInstance();
-		String password = "";
-		CIFSContext authed1 = base.withCredentials(new NtlmPasswordAuthenticator("OICEAD", "bschmid", password));
-		try {
-			SmbFile f = new SmbFile(url, authed1);
-			SmbFileOutputStream fos = new SmbFileOutputStream(f);
-			fos.write("Hi there".getBytes());
-			fos.close();
-			f.close();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
 	}
 
 	@Override
@@ -235,7 +212,6 @@ public class Animation3D_Client implements PlugIn {
 		progressGD.setModal(false);
 		progressGD.hideCancelButton();
 		progressGD.showDialog();
-		// progressGD.getButtons()[1].setVisible(false);
 
 		ExecutorService exec = Executors.newFixedThreadPool(nPartitions);
 		int nFrames = 0;
