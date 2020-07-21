@@ -271,7 +271,7 @@ public class Animation3DClient {
 				if (progress != null && c++ % 100 == 0)
 					progress.setProgress((double) total / expectedSize);
 			}
-			progress.setProgress(1);
+			progress.setProgress(0.99);
 			return f;
 		} catch (Exception e) {
 			throw new RuntimeException("Cannot start rendering", e);
