@@ -1,4 +1,4 @@
-package animation3d.server;
+package animation3d.server.server.omero;
 
 import java.awt.Color;
 import java.io.File;
@@ -7,6 +7,8 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 
+import animation3d.server.server.Connection;
+import animation3d.server.server.Job;
 import ij.CompositeImage;
 import ij.ImagePlus;
 import ij.measure.Calibration;

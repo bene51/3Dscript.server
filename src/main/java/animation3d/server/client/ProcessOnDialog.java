@@ -1,4 +1,4 @@
-package animation3d.server;
+package animation3d.server.client;
 
 import java.awt.Button;
 import java.awt.Component;
@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
+import animation3d.server.server.Animation3DServer;
+import animation3d.server.server.MulticastReceiver;
 import fiji.util.gui.GenericDialogPlus;
 import ij.IJ;
 import ij.Macro;

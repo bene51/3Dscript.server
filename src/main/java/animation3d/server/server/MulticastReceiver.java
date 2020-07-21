@@ -1,4 +1,4 @@
-package animation3d.server;
+package animation3d.server.server;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -12,10 +12,10 @@ import ij.IJ;
 
 public class MulticastReceiver extends Thread {
 
-	static final String DISCOVERY_3DSCRIPT_REQUEST  = "DISCOVERY_3DSCRIPT_REQUEST";
-	static final String DISCOVERY_3DSCRIPT_RESPONSE = "DISCOVERY_3DSCRIPT_RESPONSE";
+	public static final String DISCOVERY_3DSCRIPT_REQUEST  = "DISCOVERY_3DSCRIPT_REQUEST";
+	public static final String DISCOVERY_3DSCRIPT_RESPONSE = "DISCOVERY_3DSCRIPT_RESPONSE";
 
-	static final String DISCOVERY_GROUP = "230.0.0.0";
+	public static final String DISCOVERY_GROUP = "230.0.0.0";
 
 	protected byte[] buf = new byte[256];
 
@@ -28,7 +28,7 @@ public class MulticastReceiver extends Thread {
 		this.localAddress = getLocalAddress();
 	}
 
-	static InetAddress getLocalAddress() {
+	public static InetAddress getLocalAddress() {
 		InetAddress localAddr = null;
 		try (final DatagramSocket socket = new DatagramSocket()) {
 			try {

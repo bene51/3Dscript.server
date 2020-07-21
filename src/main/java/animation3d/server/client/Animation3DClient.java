@@ -1,4 +1,4 @@
-package animation3d.server;
+package animation3d.server.client;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;

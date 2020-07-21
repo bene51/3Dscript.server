@@ -1,4 +1,4 @@
-package animation3d.server;
+package animation3d.server.server.smb;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -6,6 +6,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.net.MalformedURLException;
 
+import animation3d.server.server.Connection;
+import animation3d.server.server.Job;
 import ij.ImagePlus;
 import jcifs.CIFSContext;
 import jcifs.CIFSException;

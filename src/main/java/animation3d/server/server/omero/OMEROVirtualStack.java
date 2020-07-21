@@ -1,4 +1,4 @@
-package animation3d.server;
+package animation3d.server.server.omero;
 
 import ij.ImageStack;
 import ij.process.ByteProcessor;

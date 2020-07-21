@@ -1,4 +1,7 @@
-package animation3d.server;
+package animation3d.server.server.omero;
+
+import animation3d.server.server.Job;
+import animation3d.server.util.ScriptAnalyzer;
 
 public class OMEROJob extends Job {
 

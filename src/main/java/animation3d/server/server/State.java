@@ -1,4 +1,4 @@
-package animation3d.server;
+package animation3d.server.server;
 
 public enum State {
 	QUEUED(0, 0),

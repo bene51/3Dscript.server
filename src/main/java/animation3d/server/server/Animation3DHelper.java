@@ -1,4 +1,4 @@
-package animation3d.server;
+package animation3d.server.server;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -10,6 +10,11 @@ import java.util.concurrent.TimeUnit;
 import animation3d.renderer3d.OpenCLRaycaster;
 import animation3d.renderer3d.Progress;
 import animation3d.renderer3d.Renderer3D;
+import animation3d.server.server.Job.Type;
+import animation3d.server.server.omero.OMEROConnection;
+import animation3d.server.server.omero.OMEROJob;
+import animation3d.server.server.smb.CIFSConnection;
+import animation3d.server.server.smb.SharedFSJob;
 import animation3d.textanim.Animator;
 import ij.IJ;
 import ij.ImagePlus;

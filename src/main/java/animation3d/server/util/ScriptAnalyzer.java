@@ -1,4 +1,4 @@
-package animation3d.server;
+package animation3d.server.util;
 
 import java.awt.Color;
 import java.util.ArrayList;

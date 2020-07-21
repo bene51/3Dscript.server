@@ -1,4 +1,4 @@
-package animation3d.server;
+package animation3d.server.client;
 
 import java.awt.Button;
 import java.awt.Choice;
@@ -29,6 +29,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import animation3d.renderer3d.OpenCLRaycaster;
+import animation3d.server.util.ScriptAnalyzer;
 import fiji.util.gui.GenericDialogPlus;
 import ij.IJ;
 import ij.ImagePlus;

@@ -1,10 +1,12 @@
-package animation3d.server;
+package animation3d.server.server;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+
+import animation3d.server.util.ScriptAnalyzer;
 
 public abstract class Job {
 
@@ -23,17 +25,17 @@ public abstract class Job {
 		}
 	}
 
-	final int w, h;
+	protected final int w, h;
 
-	final String basename;
+	protected final String basename;
 
-	final int[] frames;
+	protected final int[] frames;
 
-	State state;
+	protected State state;
 
 	final boolean uploadResults;
 
-	Type type = Type.VIDEO;
+	protected Type type = Type.VIDEO;
 
 	public Job(String basename,
 			int w,

@@ -1,4 +1,4 @@
-package animation3d.server;
+package animation3d.server.server;
 
 import java.awt.Color;
 import java.awt.GraphicsEnvironment;
@@ -32,6 +32,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 
+import animation3d.server.server.omero.OMEROJob;
+import animation3d.server.server.smb.SharedFSJob;
+import animation3d.server.util.ScriptAnalyzer;
 import fiji.util.gui.GenericDialogPlus;
 import ij.IJ;
 import ij.Prefs;
@@ -54,7 +57,7 @@ public class Animation3DServer implements PlugIn {
 			helper.render();
 			helper.uploadResults(job);
 			helper.saveJobInfo(job);
-			job.setState(animation3d.server.State.FINISHED);
+			job.setState(animation3d.server.server.State.FINISHED);
 		}
 	}
 
@@ -69,7 +72,7 @@ public class Animation3DServer implements PlugIn {
 		start();
 	}
 
-	static final int PORT = 3333;
+	public static final int PORT = 3333;
 
 	private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
@@ -522,14 +525,14 @@ public class Animation3DServer implements PlugIn {
 							System.out.println("  consumer: Rendered new job");
 							helper.uploadResults(currentJob);
 							helper.saveJobInfo(currentJob);
-							currentJob.setState(animation3d.server.State.FINISHED);
+							currentJob.setState(animation3d.server.server.State.FINISHED);
 							System.out.println("  consumer: Finished");
 							// TODO inform cancel that it is done
 //							System.exit(0);
 
 						} catch(Throwable e) {
 							e.printStackTrace();
-							currentJob.setState(animation3d.server.State.ERROR);
+							currentJob.setState(animation3d.server.server.State.ERROR);
 							PrintWriter out = null;
 							try {
 								out = new PrintWriter(new FileWriter(currentJob.basename + ".err"));
