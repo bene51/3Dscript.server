@@ -39,11 +39,17 @@ import ij.gui.GenericDialog;
 import ij.plugin.AVI_Reader;
 import ij.plugin.PlugIn;
 import ij.process.ImageProcessor;
+import omero.gateway.Gateway;
+import omero.gateway.LoginCredentials;
+import omero.gateway.exception.DSOutOfServiceException;
+import omero.gateway.model.ExperimenterData;
+import omero.log.SimpleLogger;
 
 public class Animation3D_Client implements PlugIn {
 
 	public static void main(String[] args) {
 		new ij.ImageJ();
+		// IJ.runMacroFile("h:/fijiplugins/3D_Animation/3D_Animation_Server/TestClientMacro.ijm");
 		new Animation3D_Client().run(null);
 	}
 
@@ -183,7 +189,7 @@ public class Animation3D_Client implements PlugIn {
 		int[] imageIds = indicesForRange(omeroImageId);
 
 		final String session = choiceIndex == 0 ?
-			Animation3DClient.omeroLogin(omeroHost, 4064, omeroUser, omeroPassword) :
+			omeroLogin(omeroHost, 4064, omeroUser, omeroPassword) :
 			null;
 
 		final int nPartitions = partitions.length;
@@ -321,6 +327,34 @@ public class Animation3D_Client implements PlugIn {
 			ImagePlus result = new ImagePlus("output", stack);
 			result.show();
 		}
+	}
+
+	public static String omeroLogin(String hostname, int port, String userName, String password) {
+		long start = System.currentTimeMillis();
+		String session = null;
+		Gateway gateway = new Gateway(new SimpleLogger());
+		LoginCredentials cred = new LoginCredentials();
+        cred.getServer().setHostname(hostname);
+        if (port > 0) {
+            cred.getServer().setPort(port);
+        }
+        cred.getUser().setUsername(userName);
+        cred.getUser().setPassword(password);
+        try {
+			ExperimenterData user = gateway.connect(cred);
+			session = gateway.getSessionId(user);
+		} catch (DSOutOfServiceException e) {
+			e.printStackTrace();
+		} finally {
+//			try {
+//				gateway.close();
+//			} catch (Exception e) {
+//				e.printStackTrace();
+//			}
+		}
+        long end = System.currentTimeMillis();
+        System.out.println("omero login took "  + (end - start) + " ms");
+        return session;
 	}
 
 	private static String getPassword(String prompt) {

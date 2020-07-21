@@ -13,41 +13,9 @@ import java.net.UnknownHostException;
 import java.util.Base64;
 
 import animation3d.renderer3d.Progress;
-import omero.gateway.Gateway;
-import omero.gateway.LoginCredentials;
-import omero.gateway.exception.DSOutOfServiceException;
-import omero.gateway.model.ExperimenterData;
-import omero.log.SimpleLogger;
+
 
 public class Animation3DClient {
-
-	public static String omeroLogin(String hostname, int port, String userName, String password) {
-		long start = System.currentTimeMillis();
-		String session = null;
-		Gateway gateway = new Gateway(new SimpleLogger());
-		LoginCredentials cred = new LoginCredentials();
-        cred.getServer().setHostname(hostname);
-        if (port > 0) {
-            cred.getServer().setPort(port);
-        }
-        cred.getUser().setUsername(userName);
-        cred.getUser().setPassword(password);
-        try {
-			ExperimenterData user = gateway.connect(cred);
-			session = gateway.getSessionId(user);
-		} catch (DSOutOfServiceException e) {
-			e.printStackTrace();
-		} finally {
-//			try {
-//				gateway.close();
-//			} catch (Exception e) {
-//				e.printStackTrace();
-//			}
-		}
-        long end = System.currentTimeMillis();
-        System.out.println("omero login took "  + (end - start) + " ms");
-        return session;
-	}
 
 	// renderSharedFS <urlencode(script)> user[@domain] urlencode(password) url:series,url:series <width> <height> [frames=framerange] [uploadResults=false]
 	// where url = smb://romulus.oice.uni-erlangen.de/users/bschmid/cell.lif
