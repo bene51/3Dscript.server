@@ -124,12 +124,38 @@ public class CIFSConnection implements Connection, AutoCloseable {
 
 	}
 
-	public static void main(String[] args) {
+	public static void test1(String[] args) {
 		new ij.ImageJ();
 		String password = "";
 		CIFSConnection conn = new CIFSConnection("OICEAD", "bschmid", password);
-		conn.createImage("smb://romulus.oice.uni-erlangen.de/users/bschmid/cell.lif", 0).show();
+		conn.createImage("smb://romulus.oice.uni-erlangen.de/users/bschmid/3Dscript.data/lung.tif", 0).show();
 		System.out.println("checkUsername: " + conn.checkUsername("bschmid"));
 		conn.close();
+	}
+
+	public static void test2(String[] args) throws SmbException, MalformedURLException {
+		String domain = "OICEAD";
+		String username = "bschmid";
+		String password = "Dw,dMsh1a";
+
+		NtlmPasswordAuthenticator auth = new NtlmPasswordAuthenticator(domain, username, password);
+		CIFSContext ctx = SingletonContext.getInstance().withCredentials(auth);
+		SmbFile smbFile = new SmbFile("smb://romulus.oice.uni-erlangen.de/users/bschmid/3Dscript.data/lung.ome.tif", ctx);
+
+		try {
+            FileOutputStream fileOutputStream = new FileOutputStream("C:/users/bschmid/test.ome.tif");
+            SmbFileInputStream fileInputStream = (SmbFileInputStream) smbFile.getInputStream();
+            byte[] buf = new byte[1024 * 1024];
+            int len = 0;
+            while ((len = fileInputStream.read(buf)) > 0) {
+                fileOutputStream.write(buf, 0, len);
+            }
+            fileInputStream.close();
+            fileOutputStream.close();
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+		smbFile.close();
+		System.out.println("done");
 	}
 }
