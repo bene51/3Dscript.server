@@ -138,7 +138,7 @@ public class CIFSConnection implements Connection, AutoCloseable {
 	public static void test2(String[] args) throws SmbException, MalformedURLException {
 		String domain = "OICEAD";
 		String username = "bschmid";
-		String password = "Dw,dMsh1a";
+		String password = "";
 
 		NtlmPasswordAuthenticator auth = new NtlmPasswordAuthenticator(domain, username, password);
 		CIFSContext ctx = SingletonContext.getInstance().withCredentials(auth);
