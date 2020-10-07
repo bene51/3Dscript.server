@@ -105,6 +105,7 @@ public class Animation3D_Client implements PlugIn {
 		cifsUrlAndSeries = Prefs.get("Animation3DClient.cifsUrlAndSeries", "");
 		int targetWidth = (int)Prefs.get("Animation3DClient.targetWidth", 800);
 		int targetHeight = (int)Prefs.get("Animation3DClient.targetHeight", 600);
+		boolean downloadResult = Prefs.get("Animation3DClient.downloadResult", false);
 		String dataSource = Prefs.get("Animation3DClient.imageSource", "Shared file system");
 		String processingMachinesString = Prefs.get("Animation3DClient.processingServers", "");
 		processingMachines = Arrays.asList(processingMachinesString.split(","));
@@ -117,6 +118,7 @@ public class Animation3D_Client implements PlugIn {
 		gd.addNumericField("Target_Width", targetWidth, 0);
 		gd.addNumericField("Target_Height", targetHeight, 0);
 		gd.addFileField("Animation_Script", animationScript, 30);
+		gd.addCheckbox("Download result", downloadResult);
 		gd.addButton("Run remotely", new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -143,6 +145,7 @@ public class Animation3D_Client implements PlugIn {
 		targetWidth = (int)gd.getNextNumber();
 		targetHeight = (int)gd.getNextNumber();
 		animationScript = gd.getNextString();
+		downloadResult = gd.getNextBoolean();
 
 		Prefs.set("Animation3DClient.omeroHost", omeroHost);
 		Prefs.set("Animation3DClient.omeroUser", omeroUser);
@@ -153,6 +156,7 @@ public class Animation3D_Client implements PlugIn {
 		Prefs.set("Animation3DClient.targetHeight", targetHeight);
 		Prefs.set("Animation3DClient.animationScript", animationScript);
 		Prefs.set("Animation3DClient.imageSource", dataSource);
+		Prefs.set("Animation3DClient.downloadResult", downloadResult);
 		Prefs.set("Animation3DClient.processingServers", String.join(",", processingMachines));
 		Prefs.savePreferences();
 
@@ -226,6 +230,7 @@ public class Animation3D_Client implements PlugIn {
 			nFrames += partitions[i].length;
 		ImageProcessor[][] rendered = new ImageProcessor[imageIds.length][nFrames];
 		long start = System.currentTimeMillis();
+		final boolean download = downloadResult;
 		for(int i = 0; i < nPartitions; i++) {
 			final String processingHost = processingMachines.get(i);
 			final int processingPort = 3333;
@@ -281,30 +286,32 @@ public class Animation3D_Client implements PlugIn {
 							}
 						}
 						progressbar.show(0.99);
-						int nFrames = partition.length;
-						ImagePlus video = null;
-						if(nFrames > 1) {
-							progressbar.setState("Downloading");
-							long size = Animation3DClient.getAVISize(processingHost, processingPort, basename);
-							File f = Animation3DClient.downloadAVI(processingHost, processingPort, basename, progressbar, size);
+						if(download || nPartitions > 1) {
+							int nFrames = partition.length;
+							ImagePlus video = null;
+							if(nFrames > 1) {
+								progressbar.setState("Downloading");
+								long size = Animation3DClient.getAVISize(processingHost, processingPort, basename);
+								File f = Animation3DClient.downloadAVI(processingHost, processingPort, basename, progressbar, size);
 
-							AVI_Reader reader = new AVI_Reader();
-							reader.setVirtual(false);
-							reader.displayDialog(false);
-							reader.run(f.getAbsolutePath());
-							video = reader.getImagePlus();
-							if(nPartitions == 1)
-								video.show();
+								AVI_Reader reader = new AVI_Reader();
+								reader.setVirtual(false);
+								reader.displayDialog(false);
+								reader.run(f.getAbsolutePath());
+								video = reader.getImagePlus();
+								if(nPartitions == 1)
+									video.show();
+							}
+							else {
+								File f = Animation3DClient.downloadPNG(processingHost, processingPort, basename);
+								video = IJ.openImage(f.getAbsolutePath());
+								if(nPartitions == 1)
+									video.show();
+							}
+							if(nPartitions > 1)
+								for(int f = 0; f < partition.length; f++)
+									rendered[b][partition[f]] = video.getStack().getProcessor(f + 1);
 						}
-						else {
-							File f = Animation3DClient.downloadPNG(processingHost, processingPort, basename);
-							video = IJ.openImage(f.getAbsolutePath());
-							if(nPartitions == 1)
-								video.show();
-						}
-						if(nPartitions > 1)
-							for(int f = 0; f < partition.length; f++)
-								rendered[b][partition[f]] = video.getStack().getProcessor(f + 1);
 					}
 				}
 			});
