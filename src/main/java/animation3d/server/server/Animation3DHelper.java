@@ -10,7 +10,6 @@ import java.util.concurrent.TimeUnit;
 import animation3d.renderer3d.OpenCLRaycaster;
 import animation3d.renderer3d.Progress;
 import animation3d.renderer3d.Renderer3D;
-import animation3d.server.server.Job.Type;
 import animation3d.server.server.omero.OMEROConnection;
 import animation3d.server.server.omero.OMEROJob;
 import animation3d.server.server.smb.CIFSConnection;

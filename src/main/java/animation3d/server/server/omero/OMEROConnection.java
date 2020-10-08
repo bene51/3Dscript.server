@@ -87,9 +87,14 @@ public class OMEROConnection implements Connection, AutoCloseable {
 
 	public boolean checkSession(String sessionId) {
 		try {
-			return gateway.getSessionId(gateway.getLoggedInUser()).equals(sessionId);
+			ExperimenterData currentUser = gateway.getLoggedInUser();
+			String oldSessionId = gateway.getSessionId(currentUser);
+			return oldSessionId.equals(sessionId);
 		} catch (DSOutOfServiceException e) {
-			throw new RuntimeException("Cannot check session", e);
+			// throw new RuntimeException("Cannot check session", e);
+			// this happens when the previous user signed out from OMERO.web
+			e.printStackTrace();
+			return false;
 		}
 	}
 
