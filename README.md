@@ -1,7 +1,7 @@
 3Dscript.server
 ===============
 
-Fiji plugins for rendering 3D/4D animations via 3Dscript remotely using a client-server architecture. This repository contains a server plugin intended to run as a service on a shared workstation and a client plugin which submits jobs from low-end client machines to the server for rendering with 3Dscript.
+Fiji plugins for rendering 3D/4D animations via [3Dscript](https://bene51.github.com/3Dscript) remotely using a client-server architecture. This repository contains a server plugin intended to run as a service on a shared workstation and a client plugin which submits jobs from low-end client machines to the server for rendering with 3Dscript.
 
 Installation
 ------------
@@ -19,7 +19,7 @@ Installation of client and server plugin is identical:
 
 Usage
 -----
-Find detailed usage information in the wiki.
+Find detailed usage information in the [wiki](https://github.com/bene51/3Dscript.server/wiki).
 
 Links
 -----
