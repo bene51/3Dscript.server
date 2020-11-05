@@ -4,8 +4,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BooleanSupplier;
 
 import animation3d.renderer3d.OpenCLRaycaster;
 import animation3d.renderer3d.Progress;
@@ -14,6 +14,7 @@ import animation3d.server.server.omero.OMEROConnection;
 import animation3d.server.server.omero.OMEROJob;
 import animation3d.server.server.smb.CIFSConnection;
 import animation3d.server.server.smb.SharedFSJob;
+import animation3d.server.util.FFmpeg;
 import animation3d.textanim.Animator;
 import ij.IJ;
 import ij.ImagePlus;
@@ -185,47 +186,13 @@ public class Animation3DHelper implements Progress {
 		job.setState(State.CONVERTING);
 		String avifile = job.basename + ".avi";
 		String mp4file = job.basename + ".mp4";
-		String[] cmd = new String[] {
-				"ffmpeg",
-				"-y",
-				"-i",
-				avifile,
-				"-vcodec",
-				"libx264",
-				"-an",
-				"-preset",
-				"slow",
-				"-crf",
-				"17",
-				"-pix_fmt",
-				"yuv420p",
-				"-loglevel",
-				"debug",
-				mp4file
-		};
-		StringBuffer output = new StringBuffer();
-		try {
-			Process p = Runtime.getRuntime().exec(cmd);
-			BufferedReader in = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-		    String line;
-		    boolean success = false;
-		    while ((line = in.readLine()) != null) {
-		    	output.append(line).append('\n');
-				if(cancel) {
-					p.destroy();
-					return;
-				}
-		        if(line.trim().startsWith(nFrames + " frames successfully decoded, 0 decoding errors"))
-		        	success = true;
-		    }
-			p.waitFor(3, TimeUnit.MINUTES);
-			if(!success) {
-				IJ.saveString(output.toString(), job.basename + ".error");
-				throw new RuntimeException("Error converting to MP4");
+		String logfile = job.basename + ".error";
+		FFmpeg.convertToMP4(avifile, mp4file, logfile, new BooleanSupplier() {
+			@Override
+			public boolean getAsBoolean() {
+				return cancel;
 			}
-		} catch(IOException | InterruptedException e) {
-			throw new RuntimeException("Cannot convert to MP4", e);
-		}
+		});
 	}
 
 	/**

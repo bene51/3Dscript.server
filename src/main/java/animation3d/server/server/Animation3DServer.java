@@ -34,6 +34,7 @@ import java.util.function.Predicate;
 
 import animation3d.server.server.omero.OMEROJob;
 import animation3d.server.server.smb.SharedFSJob;
+import animation3d.server.util.FFmpeg;
 import animation3d.server.util.ScriptAnalyzer;
 import fiji.util.gui.GenericDialogPlus;
 import ij.IJ;
@@ -50,6 +51,7 @@ public class Animation3DServer implements PlugIn {
 
 	// render <host> <sessionid> <script> <imageid> <target width> <target height> frames=<frames>
 	public static void oneTimeRender(String line) throws Exception {
+		FFmpeg.testAndSetupFFmpeg(true);
 		Job[] jobs = createJobsFromLine(line);
 		Animation3DHelper helper = new Animation3DHelper();
 		for(Job job : jobs) {
@@ -173,6 +175,7 @@ public class Animation3DServer implements PlugIn {
 	}
 
 	public void start() {
+		FFmpeg.testAndSetupFFmpeg(isHeadless());
 		startConsumerThread();
 
 		multicastReceiver = new MulticastReceiver(shutdown);
