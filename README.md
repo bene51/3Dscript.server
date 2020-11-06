@@ -16,7 +16,6 @@ Installation of client and server plugin is identical:
 * Click on "Close"
 * Click on "Apply changes"
 * Restart Fiji
-* Additionally, [FFmpeg](https://ffmpeg.org/) needs to be installed and in the PATH.
 
 Usage
 -----
