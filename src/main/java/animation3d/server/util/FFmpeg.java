@@ -72,7 +72,7 @@ public class FFmpeg {
 					p.destroy();
 					return;
 				}
-				if(line.trim().startsWith("frames successfully decoded, 0 decoding errors"))
+				if(line.trim().contains("frames successfully decoded, 0 decoding errors"))
 					success = true;
 			}
 			p.waitFor(3, TimeUnit.MINUTES);
