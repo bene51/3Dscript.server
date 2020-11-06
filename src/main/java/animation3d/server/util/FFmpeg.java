@@ -200,7 +200,8 @@ public class FFmpeg {
 	private static void extractFile(Path zipFile, String fileName, Path outputFile) {
 		// Wrap the file system in a try-with-resources statement
 		// to auto-close it when finished and prevent a memory leak
-		try (FileSystem fileSystem = FileSystems.newFileSystem(zipFile, null)) {
+		ClassLoader loader = null;
+		try (FileSystem fileSystem = FileSystems.newFileSystem(zipFile, loader)) {
 			Path fileToExtract = fileSystem.getPath(fileName);
 			Files.copy(fileToExtract, outputFile, StandardCopyOption.REPLACE_EXISTING);
 			System.out.println("Successfully extracted " + outputFile);
