@@ -165,7 +165,11 @@ public class Animation3DHelper implements Progress {
 		j.setState(State.ATTACHING);
 		Connection connection = getConnection(j);
 
-		File file = new File(j.basename + ".mp4");
+		File file = new File(j.basename + ".animation.txt");
+		if(file.exists())
+			connection.uploadAnimationScript(j, file);
+
+		file = new File(j.basename + ".mp4");
 		Job.Type type = Job.Type.IMAGE;
 		if(file.exists()) {
 			type = Job.Type.VIDEO;

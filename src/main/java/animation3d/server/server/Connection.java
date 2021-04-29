@@ -18,4 +18,5 @@ public interface Connection {
 
 	public void uploadVideo(Job j, File f);
 
+	public void uploadAnimationScript(Job j, File f);
 }

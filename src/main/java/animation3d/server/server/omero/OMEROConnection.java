@@ -214,7 +214,7 @@ public class OMEROConnection implements Connection, AutoCloseable {
 		if(!(job instanceof OMEROJob))
 			throw new RuntimeException("Did not get OMEROJob");
 		OMEROJob j = (OMEROJob)job;
-		j.imageAnnotationId = createAttachment(j.imageID, f);
+		j.imageAnnotationId = createAttachment(j.imageID, f, "image/png");
 	}
 
 	@Override
@@ -222,10 +222,18 @@ public class OMEROConnection implements Connection, AutoCloseable {
 		if(!(job instanceof OMEROJob))
 			throw new RuntimeException("Did not get OMEROJob");
 		OMEROJob j = (OMEROJob)job;
-		j.videoAnnotationId = createAttachment(j.imageID, f);
+		j.videoAnnotationId = createAttachment(j.imageID, f, "video/mp4");
 	}
 
-	public int createAttachment(int imageID, File file) {
+	@Override
+	public void uploadAnimationScript(Job job, File f) {
+		if(!(job instanceof OMEROJob))
+			throw new RuntimeException("Did not get OMEROJob");
+		OMEROJob j = (OMEROJob)job;
+		j.videoAnnotationId = createAttachment(j.imageID, f, "text/plain");
+	}
+
+	public int createAttachment(int imageID, File file, String fileMimeType) {
 
 		ExperimenterData user = gateway.getLoggedInUser();
 
@@ -252,9 +260,6 @@ public class OMEROConnection implements Connection, AutoCloseable {
 		String absolutePath = file.getAbsolutePath();
 		String path = absolutePath.substring(0,
 		        absolutePath.length()-name.length());
-		String fileMimeType = name.endsWith("mp4")
-				? "video/mp4"
-				: "image/png";
 
 		//create the original file object.
 		OriginalFile originalFile = new OriginalFileI();
@@ -360,7 +365,7 @@ public class OMEROConnection implements Connection, AutoCloseable {
 		try(
 			OMEROConnection vi = new OMEROConnection(new LoginCredentials(user, pass, host));
 		) {
-			vi.createAttachment(201660, new File("D:/flybrain.rgb.ffmpeg.mp4"));
+			vi.createAttachment(201660, new File("D:/flybrain.rgb.ffmpeg.mp4"), "video/mp4");
 		}
 	}
 }

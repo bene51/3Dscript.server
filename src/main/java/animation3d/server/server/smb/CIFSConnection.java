@@ -126,6 +126,15 @@ public class CIFSConnection implements Connection, AutoCloseable {
 
 	}
 
+	@Override
+	public void uploadAnimationScript(Job j, File f) {
+		if(!(j instanceof SharedFSJob))
+			throw new RuntimeException("Did not get SharedFSJob");
+		SharedFSJob fs = (SharedFSJob)j;
+		uploadFile(f.getAbsolutePath(), fs.remoteBasename + ".animation.txt");
+
+	}
+
 	public static void test1(String[] args) {
 		new ij.ImageJ();
 		String password = "";
