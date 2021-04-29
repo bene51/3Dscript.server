@@ -9,6 +9,7 @@ import java.util.List;
 
 import animation3d.parser.Interpreter;
 import animation3d.parser.NoSuchMacroException;
+import animation3d.parser.ParsingException;
 import animation3d.parser.ParsingResult;
 import animation3d.parser.Preprocessor;
 import animation3d.parser.Preprocessor.PreprocessingException;
@@ -18,6 +19,7 @@ import animation3d.renderer3d.RenderingAlgorithm;
 import animation3d.renderer3d.RenderingSettings;
 import animation3d.textanim.Animation;
 import animation3d.textanim.CombinedTransform;
+import animation3d.textanim.NumberedLine;
 import animation3d.textanim.RenderingState;
 import animation3d.util.Transform;
 
@@ -35,7 +37,7 @@ public class ScriptAnalyzer {
 
 	}
 
-	public static void main(String[] args) throws PreprocessingException, NoSuchMacroException {
+	public static void main(String[] args) throws PreprocessingException, NoSuchMacroException, ParsingException {
 		// testPartition();
 		String script = "From frame 0 to frame 100 change timepoint to 50";
 		ScriptAnalyzer sa = new ScriptAnalyzer(script);
@@ -121,13 +123,13 @@ public class ScriptAnalyzer {
 		}
 	}
 
-	public int[][] partition() throws PreprocessingException, NoSuchMacroException {
+	public int[][] partition() throws PreprocessingException, NoSuchMacroException, ParsingException {
 		return partition(-1);
 	}
 
-	public int[][] partition(int nPartitions) throws PreprocessingException, NoSuchMacroException {
+	public int[][] partition(int nPartitions) throws PreprocessingException, NoSuchMacroException, ParsingException {
 		HashMap<String, String> macros = new HashMap<String, String>();
-		ArrayList<String> lines = new ArrayList<String>();
+		ArrayList<NumberedLine> lines = new ArrayList<NumberedLine>();
 
 		Preprocessor.preprocess(script, lines, macros);
 
@@ -135,9 +137,9 @@ public class ScriptAnalyzer {
 		int from = 0;
 		int to = 0;
 
-		for(String line : lines) {
+		for(NumberedLine line : lines) {
 			ParsingResult pr = new ParsingResult();
-			Interpreter.parse(new KeywordFactory(), line, rotcenter, pr);
+			Interpreter.parse(new KeywordFactory(), line.text, rotcenter, pr);
 			to   = Math.max(to, pr.getTo());
 			Animation ta = pr.getResult();
 			if(ta != null) {
