@@ -82,7 +82,7 @@
 		<license.licenseName>bsd_2</license.licenseName>
 		<license.copyrightOwners>Benjamin Schmid</license.copyrightOwners>
 		<!-- https://github.com/eclipse/jetty.project/issues/3244 -->
-		<maven.compiler.release>8</maven.compiler.release>
+		<!-- maven.compiler.release>8</maven.compiler.release -->
 	</properties>
 
 
