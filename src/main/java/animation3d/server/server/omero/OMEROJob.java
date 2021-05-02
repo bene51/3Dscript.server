@@ -69,6 +69,7 @@ public class OMEROJob extends Job {
 			"	videoAnnotationId: " + videoAnnotationId + ",\n" +
 			"	imageAnnotationId: " + imageAnnotationId + ",\n" +
 			"	type: " + type.getType() + ",\n" +
+			"	sessionId: " + sessionID + ",\n" +
 			"}\n";
 	}
 }
